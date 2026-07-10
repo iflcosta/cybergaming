@@ -37,6 +37,14 @@ const OPEN_DATE = new Date("2026-09-01T00:00:00-03:00");
 
 const FAQ_ITEMS = [
   {
+    q: "Quais são os benefícios do Founding Member Club?",
+    a: "Dois benefícios permanentes: 25% OFF no seu primeiro pacote de horas (válido por 60 dias após a abertura), mais 10% de desconto vitalício em todas as visitas — desde que você consuma R$100 ou mais por mês na arena.",
+  },
+  {
+    q: "O desconto de 10% vitalício é mesmo para sempre?",
+    a: "Sim, enquanto você mantiver o consumo mínimo de R$100/mês na arena. Meses em que ficar abaixo desse valor o desconto fica pausado, mas volta automaticamente quando você retomar.",
+  },
+  {
     q: "Quando a arena vai abrir?",
     a: "Setembro de 2026. A data exata será anunciada primeiro pra quem tá na lista — você recebe antes de todo mundo.",
   },
@@ -45,16 +53,8 @@ const FAQ_ITEMS = [
     a: "Em Bragança Paulista, SP. O endereço completo será divulgado próximo da inauguração para quem estiver na lista.",
   },
   {
-    q: "O voucher tem validade?",
-    a: "Sim, 60 dias a partir da abertura oficial. Depois disso, o benefício de founding member expira automaticamente.",
-  },
-  {
-    q: "Posso transferir o voucher?",
-    a: "Pode sim, uma única vez pra um amigo antes do primeiro uso. Após o primeiro uso o voucher é intransferível.",
-  },
-  {
-    q: "Por que pedem meu WhatsApp?",
-    a: "Pra te avisar por lá também quando tiver novidade importante sobre a abertura — tipo data confirmada ou evento exclusivo.",
+    q: "Posso transferir meu status de founding member?",
+    a: "O voucher de 25% pode ser transferido uma única vez pra um amigo antes do primeiro uso. O desconto vitalício de 10% é pessoal e intransferível.",
   },
   {
     q: "Como cancelo o cadastro?",
@@ -72,19 +72,19 @@ const HARDWARE_SPECS = [
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Cyber Brasil Arena — Voucher Founding Member 25% OFF | Bragança Paulista" },
+      { title: "Cyber Brasil Arena — Founding Member Club | Bragança Paulista" },
       {
         name: "description",
         content:
-          "A maior arena gamer do interior paulista abre em Setembro 2026 em Bragança Paulista. Garanta agora seu voucher founding member com 25% OFF. Só 200 vagas.",
+          "A maior arena gamer do interior paulista abre em Setembro 2026 em Bragança Paulista. Founding members ganham 25% OFF no 1º pacote + 10% de desconto vitalício. Só 200 vagas.",
       },
       { name: "robots", content: "index, follow" },
       { property: "og:type", content: "website" },
-      { property: "og:title", content: "Cyber Brasil Arena — 25% OFF pra quem chegar primeiro" },
+      { property: "og:title", content: "Cyber Brasil Arena — Founding Member Club" },
       {
         property: "og:description",
         content:
-          "Hardware de elite. Infraestrutura premium. Comunidade competitiva. Chegando em Bragança Paulista em Setembro 2026. Garanta seu voucher founding member.",
+          "25% OFF no 1º pacote + 10% vitalício pra quem gastar R$100+/mês. Hardware de elite chegando a Bragança Paulista em Setembro 2026. Só 200 vagas.",
       },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#a855f7" },
@@ -329,7 +329,7 @@ function Hero() {
             href="#form"
             className="group relative inline-flex w-full items-center justify-center gap-2.5 overflow-hidden bg-accent-primary px-10 py-5 text-sm font-black uppercase tracking-widest text-text-on-accent transition-all duration-300 hover:-translate-y-0.5 hover:glow-primary md:w-auto"
           >
-            <span className="relative z-10">Resgatar voucher — 25% OFF</span>
+            <span className="relative z-10">Entrar pro Founding Member Club</span>
             <ArrowRight className="relative z-10 h-4 w-4 transition-transform group-hover:translate-x-1" />
             <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
           </a>
@@ -390,7 +390,7 @@ function HowItWorks() {
     {
       n: "02",
       t: "Receba o voucher",
-      s: "Instantaneamente no seu email: cupom de 25% OFF no primeiro pacote de horas. Só pra founding members.",
+      s: "Instantaneamente no seu email: 25% OFF na primeira visita + 10% vitalício pra quem jogar R$100+/mês. Tudo junto.",
     },
     {
       n: "03",
@@ -497,22 +497,53 @@ function VoucherSection() {
           <div className="flex flex-col items-stretch gap-0 rounded-xl bg-bg-primary md:flex-row">
             <div className="flex-1 p-8 md:p-14">
               <div className="mb-4 text-[11px] font-bold uppercase tracking-widest text-accent-primary">
-                Founding member benefit
+                Founding Member Club — {TOTAL_SPOTS} vagas
               </div>
-              <h2 className="font-display font-black uppercase leading-tight tracking-tighter" style={{ fontSize: "clamp(2.5rem,6vw,3.5rem)" }}>
-                25% OFF
+              <h2 className="font-display font-black uppercase leading-tight tracking-tighter" style={{ fontSize: "clamp(2rem,5vw,3rem)" }}>
+                Dois benefícios,
                 <br />
-                <span className="text-text-secondary text-3xl">1º pacote</span>
+                <span className="bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">
+                  pra sempre.
+                </span>
               </h2>
               <p className="mt-6 text-text-secondary">
-                Benefício exclusivo pros {TOTAL_SPOTS} primeiros. Desconto no primeiro pacote de horas,
-                válido por 60 dias após a abertura oficial.
+                Quem entrar agora não escolhe entre um desconto ou outro — ganha os dois.
+                Exclusivo pros {TOTAL_SPOTS} primeiros inscritos.
               </p>
-              <ul className="mt-8 space-y-4">
+
+              {/* Benefício 1 */}
+              <div className="mt-8 rounded-xl border border-accent-primary/20 bg-accent-primary/5 p-5">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 rounded-lg bg-accent-primary/10 px-3 py-2 font-display text-2xl font-black text-accent-primary">
+                    25%
+                  </div>
+                  <div>
+                    <div className="font-bold text-text-primary">OFF no 1º pacote de horas</div>
+                    <div className="mt-1 text-sm text-text-secondary">
+                      Desconto na primeira visita, válido por 60 dias após a abertura. Começa com tudo.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Benefício 2 */}
+              <div className="mt-4 rounded-xl border border-accent-secondary/20 bg-accent-secondary/5 p-5">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 rounded-lg bg-accent-secondary/10 px-3 py-2 font-display text-2xl font-black text-accent-secondary">
+                    10%
+                  </div>
+                  <div>
+                    <div className="font-bold text-text-primary">OFF vitalício em toda visita</div>
+                    <div className="mt-1 text-sm text-text-secondary">
+                      Mantendo R$100+/mês na arena o desconto nunca expira. Quanto mais você joga, mais economiza.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <ul className="mt-6 space-y-3">
                 {[
                   "Voucher entregue instantaneamente por email",
-                  "Válido por 60 dias após a abertura",
-                  `Limitado a ${TOTAL_SPOTS} vagas no total`,
                   "Acesso a comunidade exclusiva no Discord",
                   "Prioridade na inauguração",
                 ].map((b) => (
@@ -740,7 +771,7 @@ function FormSection() {
                     </>
                   ) : (
                     <>
-                      Quero meu voucher de 25% OFF
+                      Quero entrar pro Founding Member Club
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </>
                   )}
