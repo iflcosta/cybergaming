@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { insertLead } from "@/lib/supabase";
+import { insertLead, getLeadCount } from "@/lib/supabase";
 import {
   useEffect,
   useRef,
@@ -32,17 +32,29 @@ import {
 } from "lucide-react";
 
 const TOTAL_SPOTS = 200;
-const TAKEN_SPOTS = 47;
 const OPEN_DATE = new Date("2026-09-01T00:00:00-03:00");
+
+const JOGOS = [
+  "CS2 (Counter-Strike 2)",
+  "Valorant",
+  "League of Legends",
+  "Free Fire",
+  "Rainbow Six Siege",
+  "Fortnite",
+  "EA FC",
+  "Apex Legends",
+  "Dota 2",
+  "Outro",
+] as const;
 
 const FAQ_ITEMS = [
   {
     q: "Quais são os benefícios do Founding Member Club?",
-    a: "Dois benefícios permanentes: 25% OFF no seu primeiro pacote de horas (válido por 60 dias após a abertura), mais 10% de desconto vitalício em todas as visitas — desde que você consuma R$100 ou mais por mês na arena.",
+    a: "Dois benefícios permanentes: 25% OFF no seu primeiro pacote de horas (válido por 60 dias após a abertura), mais 10% de desconto vitalício em todas as visitas — desde que você consuma R$60 ou mais por mês na arena.",
   },
   {
     q: "O desconto de 10% vitalício é mesmo para sempre?",
-    a: "Sim, enquanto você mantiver o consumo mínimo de R$100/mês na arena. Meses em que ficar abaixo desse valor o desconto fica pausado, mas volta automaticamente quando você retomar.",
+    a: "Sim, enquanto você mantiver o consumo mínimo de R$60/mês na arena. Meses em que ficar abaixo desse valor o desconto fica pausado, mas volta automaticamente quando você retomar.",
   },
   {
     q: "Quando a arena vai abrir?",
@@ -63,10 +75,10 @@ const FAQ_ITEMS = [
 ];
 
 const HARDWARE_SPECS = [
-  { icon: Monitor, label: "Monitores", value: "240Hz", sub: "1ms response time" },
-  { icon: Cpu, label: "GPUs", value: "RTX 4080", sub: "Performance de elite" },
-  { icon: Wifi, label: "Latência", value: "<1ms", sub: "Fibra dedicada" },
-  { icon: Shield, label: "Cadeiras", value: "Pro ergô", sub: "Secretlab & DXRacer" },
+  { icon: Monitor, label: "Monitores", value: "180Hz", sub: "Alta taxa de atualização" },
+  { icon: Cpu, label: "GPUs", value: "RX 7600", sub: "Performance de elite" },
+  { icon: Wifi, label: "Latência", value: "<10ms", sub: "Fibra dedicada" },
+  { icon: Shield, label: "Cadeiras", value: "Pro ergô", sub: "Conforto para longas sessões" },
 ];
 
 export const Route = createFileRoute("/")({
@@ -84,7 +96,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "25% OFF no 1º pacote + 10% vitalício pra quem gastar R$100+/mês. Hardware de elite chegando a Bragança Paulista em Setembro 2026. Só 200 vagas.",
+          "25% OFF no 1º pacote + 10% vitalício pra quem gastar R$60+/mês. Hardware de elite chegando a Bragança Paulista em Setembro 2026. Só 200 vagas.",
       },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#a855f7" },
@@ -151,6 +163,14 @@ function Reveal({
       {children}
     </div>
   );
+}
+
+function useLeadCount() {
+  const [count, setCount] = useState<number | null>(null);
+  useEffect(() => {
+    getLeadCount().then(setCount);
+  }, []);
+  return count;
 }
 
 function useCountdown(target: Date) {
@@ -266,7 +286,8 @@ function GlitchText({ children, className }: { children: string; className?: str
 
 function Hero() {
   const countdown = useCountdown(OPEN_DATE);
-  const remaining = TOTAL_SPOTS - TAKEN_SPOTS;
+  const takenSpots = useLeadCount();
+  const remaining = takenSpots !== null ? TOTAL_SPOTS - takenSpots : null;
 
   return (
     <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
@@ -336,12 +357,17 @@ function Hero() {
 
           <div className="flex flex-col items-center gap-1 md:items-start">
             <div className="flex items-center gap-2">
-              <span className="font-display text-2xl font-black text-text-primary">{TAKEN_SPOTS}</span>
+              <span className="font-display text-2xl font-black text-text-primary">
+                {takenSpots ?? "—"}
+              </span>
               <span className="text-text-tertiary">/</span>
               <span className="text-xl font-medium text-text-tertiary">{TOTAL_SPOTS}</span>
             </div>
             <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
-              vagas ocupadas · restam <span className="text-accent-tertiary font-bold">{remaining}</span>
+              vagas ocupadas · restam{" "}
+              <span className="text-accent-tertiary font-bold">
+                {remaining ?? "…"}
+              </span>
             </span>
           </div>
         </div>
@@ -359,7 +385,7 @@ function Hero() {
 
 function StatsBar() {
   const stats = [
-    { icon: Monitor, value: "50+", label: "PCs premium" },
+    { icon: Monitor, value: "10", label: "PCs premium" },
     { icon: Users, value: "200", label: "Founding members" },
     { icon: Trophy, value: "Top 1", label: "Setup da região" },
     { icon: Clock, value: "24/7", label: "Suporte técnico" },
@@ -390,7 +416,7 @@ function HowItWorks() {
     {
       n: "02",
       t: "Receba o voucher",
-      s: "Instantaneamente no seu email: 25% OFF na primeira visita + 10% vitalício pra quem jogar R$100+/mês. Tudo junto.",
+      s: "Instantaneamente no seu email: 25% OFF na primeira visita + 10% vitalício pra quem jogar R$60+/mês. Tudo junto.",
     },
     {
       n: "03",
@@ -484,8 +510,9 @@ function HardwareSection() {
 }
 
 function VoucherSection() {
-  const remaining = TOTAL_SPOTS - TAKEN_SPOTS;
-  const percentFilled = (TAKEN_SPOTS / TOTAL_SPOTS) * 100;
+  const takenSpots = useLeadCount();
+  const remaining = takenSpots !== null ? TOTAL_SPOTS - takenSpots : null;
+  const percentFilled = takenSpots !== null ? (takenSpots / TOTAL_SPOTS) * 100 : 0;
 
   return (
     <section id="voucher" className="px-6 py-32">
@@ -535,7 +562,7 @@ function VoucherSection() {
                   <div>
                     <div className="font-bold text-text-primary">OFF vitalício em toda visita</div>
                     <div className="mt-1 text-sm text-text-secondary">
-                      Mantendo R$100+/mês na arena o desconto nunca expira. Quanto mais você joga, mais economiza.
+                      Mantendo R$60+/mês na arena o desconto nunca expira. Quanto mais você joga, mais economiza.
                     </div>
                   </div>
                 </div>
@@ -562,7 +589,7 @@ function VoucherSection() {
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">Vagas restantes</div>
                 <div className="mt-2 font-mono font-display text-7xl font-black tabular-nums text-accent-primary leading-none">
-                  {remaining}
+                  {remaining ?? "—"}
                 </div>
                 <div className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">de {TOTAL_SPOTS}</div>
               </div>
@@ -570,7 +597,7 @@ function VoucherSection() {
               <div className="w-full">
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-accent-primary to-accent-secondary"
+                    className="h-full rounded-full bg-gradient-to-r from-accent-primary to-accent-secondary transition-all duration-700"
                     style={{ width: `${percentFilled}%` }}
                   />
                 </div>
@@ -625,16 +652,82 @@ function FAQSection() {
   );
 }
 
+const ESTILOS_JOGO = [
+  { value: "solo", label: "Jogo solo", desc: "Prefiro entrar sozinho e fazer novas amizades" },
+  { value: "equipe-fixa", label: "Tenho equipe", desc: "Já tenho time formado" },
+  { value: "procurando", label: "Procurando equipe", desc: "Quero encontrar jogadores pra montar time" },
+] as const;
+
+const INTERESSES = [
+  { value: "competir", label: "Quero competir", desc: "Participar de campeonatos e rankings" },
+  { value: "assistir", label: "Quero assistir", desc: "Curtir eventos e transmissões ao vivo" },
+  { value: "ambos", label: "Ambos", desc: "Competir e acompanhar o cenário" },
+] as const;
+
+function RadioGroup<T extends string>({
+  label,
+  name,
+  options,
+  value,
+  onChange,
+  error,
+}: {
+  label: string;
+  name: string;
+  options: readonly { value: T; label: string; desc: string }[];
+  value: T | "";
+  onChange: (v: T) => void;
+  error?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="ml-1 text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+        {label}
+      </div>
+      <div className="grid gap-2 sm:grid-cols-3">
+        {options.map((opt) => (
+          <label
+            key={opt.value}
+            className={`flex cursor-pointer flex-col gap-1 border p-4 transition-all ${
+              value === opt.value
+                ? "border-accent-primary/60 bg-accent-primary/10"
+                : "border-white/8 hover:border-white/20"
+            }`}
+          >
+            <input
+              type="radio"
+              name={name}
+              value={opt.value}
+              checked={value === opt.value}
+              onChange={() => onChange(opt.value)}
+              className="sr-only"
+            />
+            <span className="text-sm font-bold text-text-primary">{opt.label}</span>
+            <span className="text-[11px] leading-snug text-text-tertiary">{opt.desc}</span>
+          </label>
+        ))}
+      </div>
+      {error && <p className="ml-1 text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
 function FormSection() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [checked, setChecked] = useState(false);
+  const [jogo, setJogo] = useState("");
+  const [estilo, setEstilo] = useState<"solo" | "equipe-fixa" | "procurando" | "">("");
+  const [interesse, setInteresse] = useState<"competir" | "assistir" | "ambos" | "">("");
 
   function validate(nome: string, whatsapp: string, email: string) {
     const errs: Record<string, string> = {};
     if (nome.length < 2) errs.nome = "Digita seu nome completo";
     if (whatsapp.replace(/\D/g, "").length < 10) errs.whatsapp = "WhatsApp inválido";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "Email inválido";
+    if (!jogo) errs.jogo = "Seleciona seu jogo principal";
+    if (!estilo) errs.estilo = "Seleciona seu estilo de jogo";
+    if (!interesse) errs.interesse = "Seleciona seu interesse";
     if (!checked) errs.lgpd = "Precisa aceitar pra continuar";
     return errs;
   }
@@ -652,7 +745,14 @@ function FormSection() {
 
     setStatus("loading");
     try {
-      await insertLead(nome, whatsapp, email);
+      await insertLead({
+        nome,
+        whatsapp,
+        email,
+        jogo_principal: jogo,
+        estilo_jogo: estilo,
+        interesse_campeonatos: interesse,
+      });
       setStatus("success");
     } catch {
       setStatus("error");
@@ -661,7 +761,7 @@ function FormSection() {
 
   return (
     <section id="form" className="px-6 py-32">
-      <div className="mx-auto max-w-xl">
+      <div className="mx-auto max-w-2xl">
         <Reveal className="text-center">
           <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.25em] text-accent-secondary">
             — Lista exclusiva
@@ -699,34 +799,98 @@ function FormSection() {
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} noValidate className="space-y-6" aria-live="polite">
-              <Field
-                id="nome"
-                label="Nome completo"
-                type="text"
-                placeholder="Como você quer ser chamado"
-                error={errors.nome}
-                autoComplete="name"
-              />
-              <div className="grid gap-6 md:grid-cols-2">
+            <form onSubmit={handleSubmit} noValidate className="space-y-8" aria-live="polite">
+              {/* Dados básicos */}
+              <div className="space-y-6">
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-tertiary">
+                  01 — Seus dados
+                </div>
                 <Field
-                  id="whatsapp"
-                  label="WhatsApp"
-                  type="tel"
-                  placeholder="(11) 99999-9999"
-                  error={errors.whatsapp}
-                  autoComplete="tel"
+                  id="nome"
+                  label="Nome completo"
+                  type="text"
+                  placeholder="Como você quer ser chamado"
+                  error={errors.nome}
+                  autoComplete="name"
                 />
-                <Field
-                  id="email"
-                  label="E-mail"
-                  type="email"
-                  placeholder="voce@email.com"
-                  error={errors.email}
-                  autoComplete="email"
+                <div className="grid gap-6 md:grid-cols-2">
+                  <Field
+                    id="whatsapp"
+                    label="WhatsApp"
+                    type="tel"
+                    placeholder="(11) 99999-9999"
+                    error={errors.whatsapp}
+                    autoComplete="tel"
+                  />
+                  <Field
+                    id="email"
+                    label="E-mail"
+                    type="email"
+                    placeholder="voce@email.com"
+                    error={errors.email}
+                    autoComplete="email"
+                  />
+                </div>
+              </div>
+
+              {/* Perfil gamer */}
+              <div className="space-y-6 border-t border-white/5 pt-8">
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-tertiary">
+                  02 — Seu perfil gamer
+                </div>
+
+                {/* Jogo principal */}
+                <div className="space-y-2">
+                  <label
+                    htmlFor="jogo"
+                    className="ml-1 block text-[10px] font-semibold uppercase tracking-widest text-text-tertiary"
+                  >
+                    Jogo principal
+                  </label>
+                  <select
+                    id="jogo"
+                    value={jogo}
+                    onChange={(e) => setJogo(e.target.value)}
+                    aria-invalid={!!errors.jogo}
+                    className={`w-full border bg-bg-secondary px-5 py-4 text-base text-text-primary transition-colors focus:outline-none ${
+                      errors.jogo
+                        ? "border-destructive"
+                        : "border-white/8 focus:border-accent-primary/60"
+                    }`}
+                  >
+                    <option value="" disabled>Seleciona seu jogo...</option>
+                    {JOGOS.map((j) => (
+                      <option key={j} value={j} className="bg-bg-secondary">
+                        {j}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.jogo && (
+                    <p className="ml-1 text-xs text-destructive">{errors.jogo}</p>
+                  )}
+                </div>
+
+                <RadioGroup
+                  label="Como você joga?"
+                  name="estilo_jogo"
+                  options={ESTILOS_JOGO}
+                  value={estilo}
+                  onChange={setEstilo}
+                  error={errors.estilo}
+                />
+
+                <RadioGroup
+                  label="Interesse em campeonatos e esports?"
+                  name="interesse_campeonatos"
+                  options={INTERESSES}
+                  value={interesse}
+                  onChange={setInteresse}
+                  error={errors.interesse}
                 />
               </div>
 
+              {/* LGPD */}
+              <div className="border-t border-white/5 pt-6">
               <label className="flex cursor-pointer items-start gap-3 py-2 text-xs leading-relaxed text-text-tertiary">
                 <input
                   type="checkbox"
@@ -753,10 +917,11 @@ function FormSection() {
               )}
 
               {status === "error" && (
-                <p className="text-sm text-destructive">
+                <p className="mt-3 text-sm text-destructive">
                   Erro ao enviar. Tenta de novo ou nos contata pelo WhatsApp.
                 </p>
               )}
+              </div>
 
               <button
                 type="submit"
