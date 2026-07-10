@@ -84,19 +84,19 @@ const HARDWARE_SPECS = [
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Cyber Brasil Arena — Founding Member Club | Bragança Paulista" },
+      { title: "Cyber Brasil Arena — Hardware de elite. Aqui em Bragança." },
       {
         name: "description",
         content:
-          "A maior arena gamer do interior paulista abre em Setembro 2026 em Bragança Paulista. Founding members ganham 25% OFF no 1º pacote + 10% de desconto vitalício. Só 200 vagas.",
+          "A arena gamer que Bragança Paulista nunca teve. Founding members ganham 25% OFF no 1º pacote + 10% vitalício. Abertura Setembro 2026. Só 200 vagas.",
       },
       { name: "robots", content: "index, follow" },
       { property: "og:type", content: "website" },
-      { property: "og:title", content: "Cyber Brasil Arena — Founding Member Club" },
+      { property: "og:title", content: "Cyber Brasil Arena — Hardware de elite. Aqui em Bragança." },
       {
         property: "og:description",
         content:
-          "25% OFF no 1º pacote + 10% vitalício pra quem gastar R$60+/mês. Hardware de elite chegando a Bragança Paulista em Setembro 2026. Só 200 vagas.",
+          "Founding members nunca pagam preço cheio: 25% OFF na 1ª visita + 10% vitalício. Abertura Setembro 2026. Só 200 vagas.",
       },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#a855f7" },
@@ -315,10 +315,10 @@ function Hero() {
         </div>
 
         <h1 className="fade-in-up font-display font-black uppercase leading-[1] tracking-tighter overflow-visible" style={{ fontSize: "clamp(2.75rem,9vw,7.5rem)" }}>
-          A próxima
+          Hardware de elite.
           <br />
           <GlitchText className="bg-gradient-to-r from-accent-primary via-purple-400 to-accent-secondary bg-clip-text text-transparent">
-            Evolução.
+            Aqui em Bragança.
           </GlitchText>
         </h1>
 
@@ -350,7 +350,7 @@ function Hero() {
             href="#form"
             className="group relative inline-flex w-full items-center justify-center gap-2.5 overflow-hidden bg-accent-primary px-8 py-4 text-xs font-black uppercase tracking-widest text-text-on-accent transition-all duration-300 hover:-translate-y-0.5 hover:glow-primary sm:px-10 sm:py-5 sm:text-sm md:w-auto"
           >
-            <span className="relative z-10">Entrar pro Founding Member Club</span>
+            <span className="relative z-10">Garantir minha vaga agora</span>
             <ArrowRight className="relative z-10 h-4 w-4 transition-transform group-hover:translate-x-1" />
             <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
           </a>
@@ -387,8 +387,8 @@ function StatsBar() {
   const stats = [
     { icon: Monitor, value: "10", label: "PCs premium" },
     { icon: Users, value: "200", label: "Founding members" },
-    { icon: Trophy, value: "Top 1", label: "Setup da região" },
-    { icon: Clock, value: "24/7", label: "Suporte técnico" },
+    { icon: Zap, value: "<10ms", label: "Latência" },
+    { icon: Clock, value: "Set/26", label: "Abertura" },
   ];
 
   return (
@@ -420,8 +420,8 @@ function HowItWorks() {
     },
     {
       n: "03",
-      t: "Domine a arena",
-      s: "No dia da abertura, você entra com prioridade e usa hardware que a maioria nem sabe que existe.",
+      t: "Entre na inauguração com vantagem",
+      s: "No dia da abertura, você entra com prioridade e joga em hardware que a maioria nem sabe que existe.",
     },
   ];
 
@@ -433,13 +433,13 @@ function HowItWorks() {
             — Como funciona
           </div>
           <h2 className="font-display text-4xl font-black uppercase tracking-tighter md:text-6xl">
-            O caminho do{" "}
+            3 passos.{" "}
             <span className="bg-gradient-to-r from-accent-secondary to-accent-primary bg-clip-text text-transparent">
-              Pro
+              Você dentro.
             </span>
           </h2>
           <p className="mt-4 max-w-xl text-lg text-text-secondary">
-            Três passos. Sem enrolação. Sem custo. Você só precisa querer ser o primeiro.
+            Sem custo. Sem enrolação. Três passos e você está dentro antes de todo mundo.
           </p>
         </Reveal>
 
@@ -527,10 +527,10 @@ function VoucherSection() {
                 Founding Member Club — {TOTAL_SPOTS} vagas
               </div>
               <h2 className="font-display font-black uppercase leading-tight tracking-tighter" style={{ fontSize: "clamp(2rem,5vw,3rem)" }}>
-                Dois benefícios,
+                Founding members
                 <br />
                 <span className="bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">
-                  pra sempre.
+                  nunca pagam cheio.
                 </span>
               </h2>
               <p className="mt-6 text-text-secondary">
@@ -767,9 +767,9 @@ function FormSection() {
             — Lista exclusiva
           </div>
           <h2 className="font-display text-4xl font-black uppercase tracking-tighter md:text-5xl">
-            Garanta seu{" "}
+            Entre antes{" "}
             <span className="bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">
-              lugar
+              de todo mundo
             </span>
           </h2>
           <p className="mt-4 text-text-secondary">
@@ -936,7 +936,7 @@ function FormSection() {
                     </>
                   ) : (
                     <>
-                      Quero entrar pro Founding Member Club
+                      Garantir minha vaga — é grátis
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </>
                   )}
