@@ -272,12 +272,12 @@ function Navbar() {
 
 function GlitchText({ children, className }: { children: string; className?: string }) {
   return (
-    <span className={`relative inline-block ${className}`}>
+    <span className={`relative inline-block overflow-visible pb-2 ${className}`}>
       <span className="relative z-10">{children}</span>
-      <span className="glitch-layer-1 pointer-events-none absolute inset-0 opacity-80" aria-hidden>
+      <span className="glitch-layer-1 pointer-events-none absolute inset-x-0 inset-y-0 opacity-80" aria-hidden>
         {children}
       </span>
-      <span className="glitch-layer-2 pointer-events-none absolute inset-0 opacity-80" aria-hidden>
+      <span className="glitch-layer-2 pointer-events-none absolute inset-x-0 inset-y-0 opacity-80" aria-hidden>
         {children}
       </span>
     </span>
@@ -290,7 +290,7 @@ function Hero() {
   const remaining = takenSpots !== null ? TOTAL_SPOTS - takenSpots : null;
 
   return (
-    <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
+    <section className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-x-hidden px-6 pt-20">
       <div className="pointer-events-none absolute inset-0 hero-grid opacity-50" />
       <div
         className="pointer-events-none absolute left-1/2 top-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full"
@@ -306,7 +306,7 @@ function Hero() {
       />
 
       <div className="relative z-10 mx-auto w-full max-w-5xl text-center">
-        <div className="fade-in-up mb-8 inline-flex items-center gap-2.5 rounded-full border border-accent-primary/20 bg-accent-primary/5 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent-secondary">
+        <div className="fade-in-up mb-8 inline-flex max-w-full items-center gap-2 rounded-full border border-accent-primary/20 bg-accent-primary/5 px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.15em] text-accent-secondary sm:gap-2.5 sm:px-4 sm:text-[10px] sm:tracking-[0.2em]">
           <span className="relative flex h-2 w-2">
             <span className="pulse-ring absolute inline-flex h-full w-full rounded-full bg-accent-secondary opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-accent-secondary" />
@@ -314,7 +314,7 @@ function Hero() {
           Abertura Setembro 2026 · Bragança Paulista, SP
         </div>
 
-        <h1 className="fade-in-up font-display font-black uppercase leading-[0.88] tracking-tighter" style={{ fontSize: "clamp(3rem,10vw,7.5rem)" }}>
+        <h1 className="fade-in-up font-display font-black uppercase leading-[0.92] tracking-tighter overflow-visible" style={{ fontSize: "clamp(2.75rem,9vw,7.5rem)" }}>
           A próxima
           <br />
           <GlitchText className="bg-gradient-to-r from-accent-primary via-purple-400 to-accent-secondary bg-clip-text text-transparent">
@@ -322,7 +322,7 @@ function Hero() {
           </GlitchText>
         </h1>
 
-        <p className="fade-in-up mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-text-secondary md:text-xl" style={{ animationDelay: "100ms" }}>
+        <p className="fade-in-up mx-auto mt-6 max-w-2xl text-base leading-relaxed text-text-secondary md:mt-8 md:text-xl" style={{ animationDelay: "100ms" }}>
           Hardware de elite, infraestrutura premium, comunidade focada em performance. A experiência
           definitiva em gaming chega ao interior paulista.
         </p>
@@ -335,7 +335,7 @@ function Hero() {
             { v: countdown.seconds, label: "seg" },
           ].map(({ v, label }) => (
             <div key={label} className="flex flex-col items-center">
-              <div className="font-mono font-display text-3xl font-black tabular-nums text-accent-primary md:text-5xl">
+              <div className="font-mono font-display text-2xl font-black tabular-nums text-accent-primary sm:text-3xl md:text-5xl">
                 {String(v).padStart(2, "0")}
               </div>
               <div className="mt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-text-tertiary">
@@ -348,7 +348,7 @@ function Hero() {
         <div className="fade-in-up mt-12 flex flex-col items-center justify-center gap-6 md:flex-row" style={{ animationDelay: "300ms" }}>
           <a
             href="#form"
-            className="group relative inline-flex w-full items-center justify-center gap-2.5 overflow-hidden bg-accent-primary px-10 py-5 text-sm font-black uppercase tracking-widest text-text-on-accent transition-all duration-300 hover:-translate-y-0.5 hover:glow-primary md:w-auto"
+            className="group relative inline-flex w-full items-center justify-center gap-2.5 overflow-hidden bg-accent-primary px-8 py-4 text-xs font-black uppercase tracking-widest text-text-on-accent transition-all duration-300 hover:-translate-y-0.5 hover:glow-primary sm:px-10 sm:py-5 sm:text-sm md:w-auto"
           >
             <span className="relative z-10">Entrar pro Founding Member Club</span>
             <ArrowRight className="relative z-10 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -373,7 +373,7 @@ function Hero() {
         </div>
       </div>
 
-      <div className="scroll-bounce pointer-events-none absolute bottom-8 left-1/2 flex flex-col items-center gap-2">
+      <div className="scroll-bounce pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 md:bottom-8">
         <span className="text-[9px] font-semibold uppercase tracking-[0.3em] text-text-tertiary">
           Role pra descobrir
         </span>
@@ -684,7 +684,7 @@ function RadioGroup<T extends string>({
       <div className="ml-1 text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
         {label}
       </div>
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {options.map((opt) => (
           <label
             key={opt.value}
@@ -1011,6 +1011,8 @@ function Footer() {
           <a
             href="https://wa.me/5511954369269"
             aria-label="WhatsApp"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-text-secondary transition-all hover:border-accent-secondary hover:text-accent-secondary"
           >
             <MessageCircle className="h-4 w-4" />
