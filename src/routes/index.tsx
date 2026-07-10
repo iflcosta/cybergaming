@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { insertLead } from "@/lib/supabase";
 import {
   useEffect,
   useRef,
@@ -620,12 +621,8 @@ function FormSection() {
 
     setStatus("loading");
     try {
-      const res = await fetch("https://formspree.io/f/xvgrdwpn", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ nome, whatsapp, email }),
-      });
-      setStatus(res.ok ? "success" : "error");
+      await insertLead(nome, whatsapp, email);
+      setStatus("success");
     } catch {
       setStatus("error");
     }
