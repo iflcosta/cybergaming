@@ -272,7 +272,7 @@ function Navbar() {
 
 function GlitchText({ children, className }: { children: string; className?: string }) {
   return (
-    <span className={`relative inline-block overflow-visible pb-2 ${className}`}>
+    <span className={`relative inline-block overflow-visible py-3 ${className}`}>
       <span className="relative z-10">{children}</span>
       <span className="glitch-layer-1 pointer-events-none absolute inset-x-0 inset-y-0 opacity-80" aria-hidden>
         {children}
@@ -314,7 +314,7 @@ function Hero() {
           Abertura Setembro 2026 · Bragança Paulista, SP
         </div>
 
-        <h1 className="fade-in-up font-display font-black uppercase leading-[0.92] tracking-tighter overflow-visible" style={{ fontSize: "clamp(2.75rem,9vw,7.5rem)" }}>
+        <h1 className="fade-in-up font-display font-black uppercase leading-[1] tracking-tighter overflow-visible" style={{ fontSize: "clamp(2.75rem,9vw,7.5rem)" }}>
           A próxima
           <br />
           <GlitchText className="bg-gradient-to-r from-accent-primary via-purple-400 to-accent-secondary bg-clip-text text-transparent">

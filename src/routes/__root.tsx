@@ -89,6 +89,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "A nova arena gamer de Bragança Paulista tá chegando. Garanta seu voucher founding member com 25% OFF no primeiro pacote de horas.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://arena.cyberinformatica.tech" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Cyber Brasil Arena — Voucher founding member 25% OFF" },
       { name: "twitter:description", content: "A nova arena gamer de Bragança Paulista tá chegando. Garanta seu voucher founding member com 25% OFF no primeiro pacote de horas." },
@@ -97,6 +98,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "canonical", href: "https://arena.cyberinformatica.tech" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
