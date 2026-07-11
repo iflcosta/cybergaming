@@ -1377,7 +1377,7 @@ function Footer() {
             <MessageCircle className="h-4 w-4" />
           </a>
           <a
-            href="https://instagram.com/cyberbrasilarena"
+            href="https://instagram.com/cybergg.arena"
             aria-label="Instagram"
             target="_blank"
             rel="noopener noreferrer"
