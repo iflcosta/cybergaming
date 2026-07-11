@@ -27,8 +27,9 @@ import {
   Monitor,
   Users,
   ChevronDown,
-  Trophy,
   Clock,
+  Menu,
+  X,
 } from "lucide-react";
 
 const TOTAL_SPOTS = 200;
@@ -81,6 +82,13 @@ const HARDWARE_SPECS = [
   { icon: Shield, label: "Cadeiras", value: "Pro ergô", sub: "Conforto para longas sessões" },
 ];
 
+const NAV_LINKS = [
+  { href: "#arena", label: "Arena" },
+  { href: "#hardware", label: "Hardware" },
+  { href: "#voucher", label: "Voucher" },
+  { href: "#faq", label: "FAQ" },
+];
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -119,6 +127,8 @@ export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
+// ─── hooks ───────────────────────────────────────────────────────────────────
+
 function useReveal<T extends HTMLElement = HTMLElement>(threshold = 0.12) {
   const ref = useRef<T | null>(null);
   const [visible, setVisible] = useState(false);
@@ -128,10 +138,7 @@ function useReveal<T extends HTMLElement = HTMLElement>(threshold = 0.12) {
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
-          if (e.isIntersecting) {
-            setVisible(true);
-            io.disconnect();
-          }
+          if (e.isIntersecting) { setVisible(true); io.disconnect(); }
         });
       },
       { threshold },
@@ -140,29 +147,6 @@ function useReveal<T extends HTMLElement = HTMLElement>(threshold = 0.12) {
     return () => io.disconnect();
   }, [threshold]);
   return { ref, visible };
-}
-
-function Reveal({
-  children,
-  className = "",
-  delay = 0,
-}: {
-  children: ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const { ref, visible } = useReveal<HTMLDivElement>();
-  return (
-    <div
-      ref={ref}
-      className={`${className} transition-all duration-700 ease-out ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-      }`}
-      style={{ transitionDelay: visible ? `${delay}ms` : "0ms" }}
-    >
-      {children}
-    </div>
-  );
 }
 
 function useLeadCount() {
@@ -188,7 +172,6 @@ function useCountdown(target: Date) {
       seconds: Math.floor((diff % 60000) / 1000),
     };
   }, [target]);
-
   const [time, setTime] = useState(calc);
   useEffect(() => {
     const id = setInterval(() => setTime(calc()), 1000);
@@ -197,26 +180,27 @@ function useCountdown(target: Date) {
   return time;
 }
 
-function LandingPage() {
+// ─── primitives ──────────────────────────────────────────────────────────────
+
+function Reveal({
+  children,
+  className = "",
+  delay = 0,
+}: {
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+}) {
+  const { ref, visible } = useReveal<HTMLDivElement>();
   return (
-    <div className="w-full bg-bg-primary text-text-primary selection:bg-accent-primary/30">
-      <a
-        href="#hero"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-md focus:bg-accent-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-text-on-accent"
-      >
-        Pular pro conteúdo
-      </a>
-      <Navbar />
-      <main id="hero">
-        <Hero />
-        <StatsBar />
-        <HowItWorks />
-        <HardwareSection />
-        <VoucherSection />
-        <FAQSection />
-        <FormSection />
-      </main>
-      <Footer />
+    <div
+      ref={ref}
+      className={`${className} transition-all duration-700 ease-out ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      }`}
+      style={{ transitionDelay: visible ? `${delay}ms` : "0ms" }}
+    >
+      {children}
     </div>
   );
 }
@@ -239,44 +223,132 @@ function Logo() {
   );
 }
 
+// ─── layout ──────────────────────────────────────────────────────────────────
+
+function LandingPage() {
+  return (
+    <div className="w-full bg-bg-primary text-text-primary selection:bg-accent-primary/30">
+      <a
+        href="#hero"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-md focus:bg-accent-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-text-on-accent"
+      >
+        Pular pro conteúdo
+      </a>
+      <Navbar />
+      <main id="hero">
+        <Hero />
+        <StatsBar />
+        <HowItWorks />
+        <ArenaVisualSection />
+        <HardwareSection />
+        <VoucherSection />
+        <FAQSection />
+        <FormSection />
+      </main>
+      <Footer />
+      <StickyMobileCTA />
+      <WhatsAppButton />
+    </div>
+  );
+}
+
+// ─── navbar ──────────────────────────────────────────────────────────────────
+
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [menuOpen]);
+
+  const close = () => setMenuOpen(false);
+
   return (
     <header
       className={`fixed top-0 z-50 w-full transition-all duration-300 ${
-        scrolled ? "border-b border-white/5 backdrop-blur-xl" : "border-b border-transparent"
+        scrolled || menuOpen
+          ? "border-b border-white/5 backdrop-blur-xl"
+          : "border-b border-transparent"
       }`}
-      style={{ backgroundColor: scrolled ? "rgba(5,5,8,0.92)" : "transparent" }}
+      style={{ backgroundColor: scrolled || menuOpen ? "rgba(5,5,8,0.95)" : "transparent" }}
     >
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         <Logo />
+
+        {/* Desktop nav */}
         <nav className="hidden gap-8 text-[11px] font-semibold uppercase tracking-[0.2em] text-text-secondary md:flex">
-          <a href="#arena" className="transition-colors hover:text-text-primary">Arena</a>
-          <a href="#hardware" className="transition-colors hover:text-text-primary">Hardware</a>
-          <a href="#voucher" className="transition-colors hover:text-text-primary">Voucher</a>
-          <a href="#faq" className="transition-colors hover:text-text-primary">FAQ</a>
+          {NAV_LINKS.map((l) => (
+            <a key={l.href} href={l.href} className="transition-colors hover:text-text-primary">
+              {l.label}
+            </a>
+          ))}
         </nav>
-        <a
-          href="#form"
-          className="group inline-flex items-center gap-2 border border-accent-primary/50 px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-accent-primary transition-all duration-300 hover:bg-accent-primary hover:text-text-on-accent"
-        >
-          Garantir vaga
-          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-        </a>
+
+        <div className="flex items-center gap-3">
+          <a
+            href="#form"
+            className="group hidden md:inline-flex items-center gap-2 border border-accent-primary/50 px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-accent-primary transition-all duration-300 hover:bg-accent-primary hover:text-text-on-accent"
+          >
+            Garantir vaga
+            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+          </a>
+
+          {/* Hamburger — mobile only */}
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="md:hidden flex h-10 w-10 items-center justify-center border border-white/10 text-text-secondary transition-colors hover:border-accent-primary/40 hover:text-accent-primary"
+            aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile menu drawer */}
+      <div
+        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          menuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <nav className="flex flex-col gap-1 px-6 pb-8 pt-2">
+          {NAV_LINKS.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              onClick={close}
+              className="border-b border-white/5 py-4 text-sm font-semibold uppercase tracking-[0.2em] text-text-secondary transition-colors hover:text-text-primary"
+            >
+              {l.label}
+            </a>
+          ))}
+          <a
+            href="#form"
+            onClick={close}
+            className="mt-5 flex items-center justify-center gap-2 bg-accent-primary py-4 text-sm font-black uppercase tracking-widest text-text-on-accent"
+          >
+            Garantir minha vaga — grátis
+            <ArrowRight className="h-4 w-4" />
+          </a>
+        </nav>
       </div>
     </header>
   );
 }
 
+// ─── hero ────────────────────────────────────────────────────────────────────
+
 function GlitchText({ children, className }: { children: string; className?: string }) {
   return (
-    <span className={`relative inline-block overflow-visible py-3 ${className}`}>
+    <span className={`relative inline-block overflow-hidden py-3 ${className}`}>
       <span className="relative z-10">{children}</span>
       <span className="glitch-layer-1 pointer-events-none absolute inset-x-0 inset-y-0 opacity-80" aria-hidden>
         {children}
@@ -292,9 +364,16 @@ function Hero() {
   const countdown = useCountdown(OPEN_DATE);
   const { count: takenSpots, error: countError } = useLeadCount();
   const remaining = takenSpots !== null ? TOTAL_SPOTS - takenSpots : null;
+  const [hintVisible, setHintVisible] = useState(true);
+
+  useEffect(() => {
+    const handler = () => setHintVisible(window.scrollY < 80);
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
 
   return (
-    <section className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-x-hidden px-6 pt-20">
+    <section className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-x-hidden px-6 pt-20 pb-24 md:pb-0">
       <div className="pointer-events-none absolute inset-0 hero-grid opacity-50" />
       <div
         className="pointer-events-none absolute left-1/2 top-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full"
@@ -318,7 +397,10 @@ function Hero() {
           Abertura Setembro 2026 · Bragança Paulista, SP
         </div>
 
-        <h1 className="fade-in-up font-display font-black uppercase leading-[1] tracking-tighter overflow-visible" style={{ fontSize: "clamp(2.75rem,9vw,7.5rem)" }}>
+        <h1
+          className="fade-in-up font-display font-black uppercase leading-[1] tracking-tighter"
+          style={{ fontSize: "clamp(2.75rem,9vw,7.5rem)" }}
+        >
           Hardware de elite.
           <br />
           <GlitchText className="bg-gradient-to-r from-accent-primary via-purple-400 to-accent-secondary bg-clip-text text-transparent">
@@ -326,12 +408,19 @@ function Hero() {
           </GlitchText>
         </h1>
 
-        <p className="fade-in-up mx-auto mt-6 max-w-2xl text-base leading-relaxed text-text-secondary md:mt-8 md:text-xl" style={{ animationDelay: "100ms" }}>
+        <p
+          className="fade-in-up mx-auto mt-6 max-w-2xl text-base leading-relaxed text-text-secondary md:mt-8 md:text-xl"
+          style={{ animationDelay: "100ms" }}
+        >
           Hardware de elite, infraestrutura premium, comunidade focada em performance. A experiência
           definitiva em gaming chega ao interior paulista.
         </p>
 
-        <div className="fade-in-up mt-12 flex items-center justify-center gap-4 md:gap-8" style={{ animationDelay: "200ms" }}>
+        {/* Countdown */}
+        <div
+          className="fade-in-up mt-10 flex items-center justify-center gap-3 sm:gap-6 md:gap-8"
+          style={{ animationDelay: "200ms" }}
+        >
           {[
             { v: countdown.days, label: "dias" },
             { v: countdown.hours, label: "horas" },
@@ -339,7 +428,7 @@ function Hero() {
             { v: countdown.seconds, label: "seg" },
           ].map(({ v, label }) => (
             <div key={label} className="flex flex-col items-center">
-              <div className="font-mono font-display text-2xl font-black tabular-nums text-accent-primary sm:text-3xl md:text-5xl">
+              <div className="font-mono font-display font-black tabular-nums text-accent-primary text-3xl sm:text-4xl md:text-5xl">
                 {String(v).padStart(2, "0")}
               </div>
               <div className="mt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-text-tertiary">
@@ -349,7 +438,11 @@ function Hero() {
           ))}
         </div>
 
-        <div className="fade-in-up mt-12 flex flex-col items-center justify-center gap-6 md:flex-row" style={{ animationDelay: "300ms" }}>
+        {/* CTA + spot counter */}
+        <div
+          className="fade-in-up mt-10 flex flex-col items-center justify-center gap-5 md:flex-row"
+          style={{ animationDelay: "300ms" }}
+        >
           <a
             href="#form"
             className="group relative inline-flex w-full items-center justify-center gap-2.5 overflow-hidden bg-accent-primary px-8 py-4 text-xs font-black uppercase tracking-widest text-text-on-accent transition-all duration-300 hover:-translate-y-0.5 hover:glow-primary sm:px-10 sm:py-5 sm:text-sm md:w-auto"
@@ -375,9 +468,7 @@ function Hero() {
                 </div>
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
                   vagas ocupadas · restam{" "}
-                  <span className="text-accent-tertiary font-bold">
-                    {remaining ?? "…"}
-                  </span>
+                  <span className="text-accent-tertiary font-bold">{remaining ?? "…"}</span>
                 </span>
               </>
             )}
@@ -385,7 +476,12 @@ function Hero() {
         </div>
       </div>
 
-      <div className="scroll-bounce pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 md:bottom-8">
+      {/* Scroll hint — fades out after scrolling */}
+      <div
+        className={`scroll-bounce pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 transition-opacity duration-500 md:bottom-8 ${
+          hintVisible ? "opacity-100" : "opacity-0"
+        }`}
+      >
         <span className="text-[9px] font-semibold uppercase tracking-[0.3em] text-text-tertiary">
           Role pra descobrir
         </span>
@@ -394,6 +490,8 @@ function Hero() {
     </section>
   );
 }
+
+// ─── stats bar ───────────────────────────────────────────────────────────────
 
 function StatsBar() {
   const stats = [
@@ -418,6 +516,8 @@ function StatsBar() {
   );
 }
 
+// ─── how it works ─────────────────────────────────────────────────────────────
+
 function HowItWorks() {
   const steps = [
     {
@@ -438,7 +538,7 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="arena" className="px-6 py-32">
+    <section id="arena" className="px-6 py-16 md:py-32">
       <div className="mx-auto max-w-7xl">
         <Reveal>
           <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.25em] text-accent-secondary">
@@ -455,10 +555,10 @@ function HowItWorks() {
           </p>
         </Reveal>
 
-        <div className="mt-20 grid gap-0 md:grid-cols-3">
+        <div className="mt-16 grid gap-0 md:grid-cols-3">
           {steps.map((step, i) => (
             <Reveal key={step.n} delay={i * 120}>
-              <div className="group relative border border-white/5 p-10 transition-colors hover:border-accent-primary/20 hover:bg-bg-secondary/50">
+              <div className="group relative border border-white/5 p-8 md:p-10 transition-colors hover:border-accent-primary/20 hover:bg-bg-secondary/50">
                 <div className="font-mono font-display text-7xl font-black text-white/4 transition-colors group-hover:text-accent-primary/10">
                   {step.n}
                 </div>
@@ -473,9 +573,163 @@ function HowItWorks() {
   );
 }
 
+// ─── arena visual ─────────────────────────────────────────────────────────────
+
+function ArenaVisualSection() {
+  return (
+    <section className="overflow-hidden bg-bg-secondary px-6 py-16 md:py-24">
+      <div className="mx-auto max-w-7xl">
+        <Reveal className="mb-12 text-center">
+          <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.25em] text-accent-secondary">
+            — O ambiente
+          </div>
+          <h2 className="font-display text-4xl font-black uppercase tracking-tighter md:text-6xl">
+            Cada detalhe <span className="text-accent-primary">importa</span>
+          </h2>
+          <p className="mt-4 mx-auto max-w-xl text-lg text-text-secondary">
+            Equipamento de competição, ambiente climatizado e fibra dedicada. Sem limitações.
+          </p>
+        </Reveal>
+
+        <Reveal className="relative mx-auto max-w-2xl" delay={100}>
+          {/* Monitor frame */}
+          <div
+            className="relative rounded-xl border border-white/10 bg-bg-tertiary p-1.5"
+            style={{ boxShadow: "0 25px 60px rgba(176,110,247,0.15), 0 0 0 1px rgba(255,255,255,0.04)" }}
+          >
+            {/* Screen */}
+            <div className="relative aspect-video overflow-hidden rounded-lg bg-bg-primary">
+              <div className="absolute inset-0 bg-gradient-to-br from-accent-primary/10 via-bg-primary to-accent-secondary/10" />
+              <div className="absolute inset-0 hero-grid opacity-25" />
+              {/* Scan lines */}
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  backgroundImage:
+                    "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.012) 3px, rgba(255,255,255,0.012) 4px)",
+                }}
+              />
+
+              {/* HUD */}
+              <div className="absolute inset-3 sm:inset-5 flex flex-col justify-between">
+                {/* Top bar */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[7px] sm:text-[9px] font-mono uppercase tracking-widest text-text-tertiary w-6">HP</span>
+                      <div className="h-1 sm:h-1.5 w-16 sm:w-24 rounded-full bg-white/5 overflow-hidden">
+                        <div className="h-full w-[78%] rounded-full bg-gradient-to-r from-green-500 to-emerald-400" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[7px] sm:text-[9px] font-mono uppercase tracking-widest text-text-tertiary w-6">SH</span>
+                      <div className="h-1 sm:h-1.5 w-12 sm:w-20 rounded-full bg-white/5 overflow-hidden">
+                        <div className="h-full w-[45%] rounded-full bg-gradient-to-r from-accent-secondary to-cyan-400" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-[8px] sm:text-[10px] text-green-400/80">8 MS</span>
+                    <span className="font-mono text-[8px] sm:text-[10px] text-accent-secondary/80">240 FPS</span>
+                  </div>
+                </div>
+
+                {/* Crosshair */}
+                <div className="flex items-center justify-center">
+                  <div className="relative w-6 h-6 sm:w-9 sm:h-9">
+                    <div className="absolute top-1/2 w-full h-px bg-accent-secondary/50" />
+                    <div className="absolute left-1/2 h-full w-px bg-accent-secondary/50" />
+                    <div className="absolute inset-[25%] rounded-full border border-accent-secondary/40" />
+                    <div className="absolute inset-[44%] rounded-full bg-accent-secondary/70" />
+                  </div>
+                </div>
+
+                {/* Bottom bar */}
+                <div className="flex items-end justify-between">
+                  <div className="flex gap-1.5">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className={`w-6 h-6 sm:w-8 sm:h-8 rounded border flex items-center justify-center ${
+                          i === 1
+                            ? "border-accent-primary/60 bg-accent-primary/10"
+                            : "border-white/10 bg-white/5"
+                        }`}
+                      >
+                        <span className="text-[7px] sm:text-[9px] font-mono text-text-tertiary">{i}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-right">
+                    <div className="font-mono text-[8px] sm:text-[10px] text-text-tertiary">ROUND 12</div>
+                    <div className="font-display font-black text-base sm:text-xl text-text-primary">
+                      <span className="text-accent-secondary">12</span>
+                      <span className="text-text-tertiary mx-1">:</span>
+                      <span className="text-destructive">8</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Inner glow */}
+              <div
+                className="pointer-events-none absolute inset-0 rounded-lg"
+                style={{ boxShadow: "inset 0 0 60px rgba(176,110,247,0.07)" }}
+              />
+            </div>
+          </div>
+
+          {/* Monitor stand */}
+          <div className="mx-auto flex flex-col items-center">
+            <div className="w-16 h-3 bg-bg-tertiary rounded-b-sm" />
+            <div className="w-28 h-1.5 bg-white/5 rounded-sm" />
+          </div>
+
+          {/* Glow under */}
+          <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-10 bg-accent-primary/10 blur-2xl rounded-full" />
+
+          {/* Floating spec tags — desktop only */}
+          {[
+            { label: "180Hz", sub: "Monitor", color: "text-accent-primary", border: "border-accent-primary/30", pos: "-left-24 top-8" },
+            { label: "RX 7600", sub: "GPU", color: "text-accent-secondary", border: "border-accent-secondary/30", pos: "-right-24 top-8" },
+            { label: "<10ms", sub: "Latência", color: "text-green-400", border: "border-green-500/30", pos: "-left-24 bottom-16" },
+            { label: "21°C", sub: "Climatizado", color: "text-text-primary", border: "border-white/10", pos: "-right-24 bottom-16" },
+          ].map((tag, i) => (
+            <Reveal key={tag.label} delay={200 + i * 80} className={`absolute ${tag.pos} hidden lg:block`}>
+              <div className={`border ${tag.border} bg-bg-primary/90 backdrop-blur-sm px-3 py-2 rounded-lg text-center`}>
+                <div className={`${tag.color} font-black font-display text-xl`}>{tag.label}</div>
+                <div className="text-text-tertiary text-[9px] uppercase tracking-widest mt-0.5">{tag.sub}</div>
+              </div>
+            </Reveal>
+          ))}
+        </Reveal>
+
+        {/* Mobile spec chips */}
+        <div className="mt-8 grid grid-cols-2 gap-3 lg:hidden">
+          {[
+            { v: "180Hz", l: "Monitor", c: "text-accent-primary", b: "border-accent-primary/20" },
+            { v: "RX 7600", l: "GPU", c: "text-accent-secondary", b: "border-accent-secondary/20" },
+            { v: "<10ms", l: "Latência", c: "text-green-400", b: "border-green-500/20" },
+            { v: "21°C", l: "Climatizado", c: "text-text-primary", b: "border-white/10" },
+          ].map((s, i) => (
+            <Reveal key={s.l} delay={i * 60}>
+              <div className={`border ${s.b} bg-bg-primary rounded-lg px-4 py-4 text-center`}>
+                <div className={`${s.c} font-black font-display text-2xl`}>{s.v}</div>
+                <div className="mt-1 text-text-tertiary text-[10px] uppercase tracking-widest">{s.l}</div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── hardware section ─────────────────────────────────────────────────────────
+
 function HardwareSection() {
   return (
-    <section id="hardware" className="bg-bg-secondary px-6 py-32">
+    <section id="hardware" className="bg-bg-secondary px-6 py-16 md:py-32">
       <div className="mx-auto max-w-7xl">
         <Reveal>
           <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.25em] text-accent-secondary">
@@ -489,7 +743,7 @@ function HardwareSection() {
           </p>
         </Reveal>
 
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {HARDWARE_SPECS.map((spec, i) => (
             <Reveal key={spec.label} delay={i * 100}>
               <div className="group relative overflow-hidden border border-white/5 bg-bg-primary p-8 transition-all duration-300 hover:border-accent-primary/30 hover:-translate-y-1">
@@ -506,9 +760,9 @@ function HardwareSection() {
           ))}
         </div>
 
-        <Reveal className="mt-12" delay={400}>
-          <div className="flex items-center gap-3 rounded-xl border border-accent-secondary/20 bg-accent-secondary/5 p-5">
-            <Zap className="h-5 w-5 flex-shrink-0 text-accent-secondary" />
+        <Reveal className="mt-10" delay={400}>
+          <div className="flex items-start gap-3 rounded-xl border border-accent-secondary/20 bg-accent-secondary/5 p-5">
+            <Zap className="mt-0.5 h-5 w-5 flex-shrink-0 text-accent-secondary" />
             <p className="text-sm text-text-secondary">
               <span className="font-semibold text-text-primary">Infraestrutura dedicada:</span>{" "}
               link de fibra exclusivo, UPS para todos os setups, ambiente climatizado a 21°C constante e
@@ -521,95 +775,39 @@ function HardwareSection() {
   );
 }
 
+// ─── voucher section ──────────────────────────────────────────────────────────
+
 function VoucherSection() {
   const { count: takenSpots, error: countError } = useLeadCount();
   const remaining = takenSpots !== null ? TOTAL_SPOTS - takenSpots : null;
   const percentFilled = takenSpots !== null ? (takenSpots / TOTAL_SPOTS) * 100 : 0;
 
   return (
-    <section id="voucher" className="px-6 py-32">
+    <section id="voucher" className="px-6 py-16 md:py-32">
       <div className="mx-auto max-w-4xl">
         <div className="relative overflow-hidden rounded-2xl border border-dashed border-accent-primary/30 bg-bg-secondary p-1">
           <div className="pointer-events-none absolute left-0 top-0 h-16 w-16 border-l-2 border-t-2 border-accent-primary/60" />
           <div className="pointer-events-none absolute bottom-0 right-0 h-16 w-16 border-b-2 border-r-2 border-accent-primary/60" />
 
-          <div className="flex flex-col items-stretch gap-0 rounded-xl bg-bg-primary md:flex-row">
-            <div className="flex-1 p-8 md:p-14">
-              <div className="mb-4 text-[11px] font-bold uppercase tracking-widest text-accent-primary">
-                Founding Member Club — {TOTAL_SPOTS} vagas
-              </div>
-              <h2 className="font-display font-black uppercase leading-tight tracking-tighter" style={{ fontSize: "clamp(2rem,5vw,3rem)" }}>
-                Founding members
-                <br />
-                <span className="bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">
-                  nunca pagam cheio.
-                </span>
-              </h2>
-              <p className="mt-6 text-text-secondary">
-                Quem entrar agora não escolhe entre um desconto ou outro — ganha os dois.
-                Exclusivo pros {TOTAL_SPOTS} primeiros inscritos.
-              </p>
-
-              {/* Benefício 1 */}
-              <div className="mt-8 rounded-xl border border-accent-primary/20 bg-accent-primary/5 p-5">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 rounded-lg bg-accent-primary/10 px-3 py-2 font-display text-2xl font-black text-accent-primary">
-                    25%
-                  </div>
-                  <div>
-                    <div className="font-bold text-text-primary">OFF no 1º pacote de horas</div>
-                    <div className="mt-1 text-sm text-text-secondary">
-                      Desconto na primeira visita, válido por 60 dias após a abertura. Começa com tudo.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Benefício 2 */}
-              <div className="mt-4 rounded-xl border border-accent-secondary/20 bg-accent-secondary/5 p-5">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 rounded-lg bg-accent-secondary/10 px-3 py-2 font-display text-2xl font-black text-accent-secondary">
-                    10%
-                  </div>
-                  <div>
-                    <div className="font-bold text-text-primary">OFF vitalício em toda visita</div>
-                    <div className="mt-1 text-sm text-text-secondary">
-                      Mantendo R$60+/mês na arena o desconto nunca expira. Quanto mais você joga, mais economiza.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <ul className="mt-6 space-y-3">
-                {[
-                  "Voucher entregue instantaneamente por email",
-                  "Acesso a comunidade exclusiva no Discord",
-                  "Prioridade na inauguração",
-                ].map((b) => (
-                  <li key={b} className="flex items-start gap-3 text-sm text-text-primary">
-                    <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent-secondary" />
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="hidden w-px bg-white/5 md:block" />
-            <div className="block h-px bg-white/5 md:hidden" />
-
-            <div className="flex flex-col items-center justify-center gap-6 p-8 text-center md:w-56 md:p-10">
+          <div className="flex flex-col rounded-xl bg-bg-primary md:flex-row">
+            {/* Counter — first on mobile, right on desktop */}
+            <div className="flex flex-col items-center justify-center gap-5 border-b border-white/5 p-6 text-center md:order-2 md:w-56 md:border-b-0 md:border-l md:p-10">
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">Vagas restantes</div>
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+                  Vagas restantes
+                </div>
                 {countError ? (
-                  <div className="mt-2 text-[10px] font-semibold uppercase tracking-widest text-destructive">
+                  <div className="mt-2 text-xs font-semibold uppercase tracking-widest text-destructive">
                     Indisponível
                   </div>
                 ) : (
                   <>
-                    <div className="mt-2 font-mono font-display text-7xl font-black tabular-nums text-accent-primary leading-none">
+                    <div className="mt-2 font-mono font-display text-6xl font-black tabular-nums text-accent-primary leading-none md:text-7xl">
                       {remaining ?? "—"}
                     </div>
-                    <div className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">de {TOTAL_SPOTS}</div>
+                    <div className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+                      de {TOTAL_SPOTS}
+                    </div>
                   </>
                 )}
               </div>
@@ -632,6 +830,70 @@ function VoucherSection() {
                 <ArrowRight className="h-3.5 w-3.5" />
               </a>
             </div>
+
+            {/* Benefits — second on mobile, left on desktop */}
+            <div className="flex-1 p-8 md:order-1 md:p-14">
+              <div className="mb-4 text-[11px] font-bold uppercase tracking-widest text-accent-primary">
+                Founding Member Club — {TOTAL_SPOTS} vagas
+              </div>
+              <h2
+                className="font-display font-black uppercase leading-tight tracking-tighter"
+                style={{ fontSize: "clamp(1.8rem,4vw,2.8rem)" }}
+              >
+                Founding members
+                <br />
+                <span className="bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">
+                  nunca pagam cheio.
+                </span>
+              </h2>
+              <p className="mt-5 text-text-secondary">
+                Quem entrar agora não escolhe entre um desconto ou outro — ganha os dois.
+                Exclusivo pros {TOTAL_SPOTS} primeiros inscritos.
+              </p>
+
+              {/* Benefício 1 — destaque principal */}
+              <div className="mt-6 rounded-xl border border-accent-primary/30 bg-gradient-to-br from-accent-primary/10 to-accent-primary/5 p-5">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 rounded-lg border border-accent-primary/30 bg-accent-primary/15 px-3 py-2 font-display text-4xl font-black text-accent-primary leading-none">
+                    25%
+                  </div>
+                  <div>
+                    <div className="font-bold text-text-primary text-lg">OFF no 1º pacote de horas</div>
+                    <div className="mt-1 text-sm text-text-secondary">
+                      Desconto na primeira visita, válido por 60 dias após a abertura. Começa com tudo.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Benefício 2 */}
+              <div className="mt-3 rounded-xl border border-accent-secondary/20 bg-accent-secondary/5 p-5">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 rounded-lg bg-accent-secondary/10 px-3 py-2 font-display text-2xl font-black text-accent-secondary">
+                    10%
+                  </div>
+                  <div>
+                    <div className="font-bold text-text-primary">OFF vitalício em toda visita</div>
+                    <div className="mt-1 text-sm text-text-secondary">
+                      Mantendo R$60+/mês na arena o desconto nunca expira. Quanto mais você joga, mais economiza.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <ul className="mt-5 space-y-3">
+                {[
+                  "Voucher entregue instantaneamente por email",
+                  "Acesso a comunidade exclusiva no Discord",
+                  "Prioridade na inauguração",
+                ].map((b) => (
+                  <li key={b} className="flex items-start gap-3 text-sm text-text-primary">
+                    <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent-secondary" />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -639,9 +901,11 @@ function VoucherSection() {
   );
 }
 
+// ─── faq ─────────────────────────────────────────────────────────────────────
+
 function FAQSection() {
   return (
-    <section id="faq" className="bg-bg-secondary px-6 py-32">
+    <section id="faq" className="bg-bg-secondary px-6 py-16 md:py-32">
       <div className="mx-auto max-w-3xl">
         <Reveal>
           <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.25em] text-accent-secondary">
@@ -653,14 +917,14 @@ function FAQSection() {
           <p className="mt-4 text-text-secondary">Ficou dúvida? Talvez esteja aqui.</p>
         </Reveal>
 
-        <Reveal className="mt-12">
+        <Reveal className="mt-10">
           <Accordion type="single" collapsible className="w-full">
             {FAQ_ITEMS.map((item, i) => (
               <AccordionItem key={i} value={`item-${i}`} className="border-b border-white/5">
-                <AccordionTrigger className="py-6 text-left text-base font-semibold text-text-primary transition-colors hover:text-accent-primary hover:no-underline md:text-lg">
+                <AccordionTrigger className="py-5 text-left text-base font-semibold text-text-primary transition-colors hover:text-accent-primary hover:no-underline md:text-lg">
                   {item.q}
                 </AccordionTrigger>
-                <AccordionContent className="pb-6 leading-relaxed text-text-secondary">
+                <AccordionContent className="pb-5 leading-relaxed text-text-secondary">
                   {item.a}
                 </AccordionContent>
               </AccordionItem>
@@ -671,6 +935,8 @@ function FAQSection() {
     </section>
   );
 }
+
+// ─── form ─────────────────────────────────────────────────────────────────────
 
 const ESTILOS_JOGO = [
   { value: "solo", label: "Jogo solo", desc: "Prefiro entrar sozinho e fazer novas amizades" },
@@ -708,9 +974,9 @@ function RadioGroup<T extends string>({
         {options.map((opt) => (
           <label
             key={opt.value}
-            className={`flex cursor-pointer flex-col gap-1 border p-4 transition-all ${
+            className={`flex cursor-pointer flex-col gap-1 border p-4 transition-all duration-200 active:scale-[0.97] ${
               value === opt.value
-                ? "border-accent-primary/60 bg-accent-primary/10"
+                ? "border-accent-primary/60 bg-accent-primary/10 scale-[1.01]"
                 : "border-white/8 hover:border-white/20"
             }`}
           >
@@ -728,6 +994,26 @@ function RadioGroup<T extends string>({
         ))}
       </div>
       {error && <p className="ml-1 text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+function StepLabel({ n, label, done }: { n: string; label: string; done?: boolean }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div
+        className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-black transition-colors ${
+          done
+            ? "bg-accent-secondary text-bg-primary"
+            : "bg-accent-primary text-text-on-accent"
+        }`}
+      >
+        {done ? <Check className="h-3.5 w-3.5" /> : n}
+      </div>
+      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-secondary">
+        {label}
+      </span>
+      <div className="flex-1 h-px bg-white/5" />
     </div>
   );
 }
@@ -765,22 +1051,17 @@ function FormSection() {
 
     setStatus("loading");
     try {
-      await insertLead({
-        nome,
-        whatsapp,
-        email,
-        jogo_principal: jogo,
-        estilo_jogo: estilo,
-        interesse_campeonatos: interesse,
-      });
+      await insertLead({ nome, whatsapp, email, jogo_principal: jogo, estilo_jogo: estilo, interesse_campeonatos: interesse });
       setStatus("success");
     } catch {
       setStatus("error");
     }
   }
 
+  const step1Done = status === "success";
+
   return (
-    <section id="form" className="px-6 py-32">
+    <section id="form" className="px-6 py-16 md:py-32">
       <div className="mx-auto max-w-2xl">
         <Reveal className="text-center">
           <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.25em] text-accent-secondary">
@@ -797,7 +1078,7 @@ function FormSection() {
           </p>
         </Reveal>
 
-        <Reveal className="mt-12">
+        <Reveal className="mt-10">
           {status === "success" ? (
             <div
               className="rounded-xl border border-accent-primary/40 p-10 text-center"
@@ -820,11 +1101,9 @@ function FormSection() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} noValidate className="space-y-8" aria-live="polite">
-              {/* Dados básicos */}
-              <div className="space-y-6">
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-tertiary">
-                  01 — Seus dados
-                </div>
+              {/* Step 1 */}
+              <div className="space-y-5">
+                <StepLabel n="01" label="Seus dados" done={step1Done} />
                 <Field
                   id="nome"
                   label="Nome completo"
@@ -833,7 +1112,7 @@ function FormSection() {
                   error={errors.nome}
                   autoComplete="name"
                 />
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-5 md:grid-cols-2">
                   <Field
                     id="whatsapp"
                     label="WhatsApp"
@@ -853,13 +1132,10 @@ function FormSection() {
                 </div>
               </div>
 
-              {/* Perfil gamer */}
-              <div className="space-y-6 border-t border-white/5 pt-8">
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-tertiary">
-                  02 — Seu perfil gamer
-                </div>
+              {/* Step 2 */}
+              <div className="space-y-5 border-t border-white/5 pt-6">
+                <StepLabel n="02" label="Seu perfil gamer" />
 
-                {/* Jogo principal */}
                 <div className="space-y-2">
                   <label
                     htmlFor="jogo"
@@ -885,9 +1161,7 @@ function FormSection() {
                       </option>
                     ))}
                   </select>
-                  {errors.jogo && (
-                    <p className="ml-1 text-xs text-destructive">{errors.jogo}</p>
-                  )}
+                  {errors.jogo && <p className="ml-1 text-xs text-destructive">{errors.jogo}</p>}
                 </div>
 
                 <RadioGroup
@@ -910,37 +1184,36 @@ function FormSection() {
               </div>
 
               {/* LGPD */}
-              <div className="border-t border-white/5 pt-6">
-              <label className="flex cursor-pointer items-start gap-3 py-2 text-xs leading-relaxed text-text-tertiary">
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={(e) => setChecked(e.target.checked)}
-                  className="mt-1 h-4 w-4 flex-shrink-0 accent-accent-primary"
-                  aria-describedby={errors.lgpd ? "lgpd-error" : undefined}
-                  aria-invalid={!!errors.lgpd}
-                />
-                <span>
-                  Li e aceito a{" "}
-                  <Link to="/privacidade" className="text-accent-primary underline-offset-2 hover:underline">
-                    política de privacidade
-                  </Link>{" "}
-                  e os{" "}
-                  <Link to="/termos" className="text-accent-primary underline-offset-2 hover:underline">
-                    termos de uso
-                  </Link>
-                  . Posso cancelar quando quiser.
-                </span>
-              </label>
-              {errors.lgpd && (
-                <p id="lgpd-error" className="text-xs text-destructive">{errors.lgpd}</p>
-              )}
-
-              {status === "error" && (
-                <p className="mt-3 text-sm text-destructive">
-                  Erro ao enviar. Tenta de novo ou nos contata pelo WhatsApp.
-                </p>
-              )}
+              <div className="border-t border-white/5 pt-5">
+                <label className="flex cursor-pointer items-start gap-3 py-2 text-xs leading-relaxed text-text-tertiary">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(e) => setChecked(e.target.checked)}
+                    className="mt-1 h-4 w-4 flex-shrink-0 accent-accent-primary"
+                    aria-describedby={errors.lgpd ? "lgpd-error" : undefined}
+                    aria-invalid={!!errors.lgpd}
+                  />
+                  <span>
+                    Li e aceito a{" "}
+                    <Link to="/privacidade" className="text-accent-primary underline-offset-2 hover:underline">
+                      política de privacidade
+                    </Link>{" "}
+                    e os{" "}
+                    <Link to="/termos" className="text-accent-primary underline-offset-2 hover:underline">
+                      termos de uso
+                    </Link>
+                    . Posso cancelar quando quiser.
+                  </span>
+                </label>
+                {errors.lgpd && (
+                  <p id="lgpd-error" className="text-xs text-destructive">{errors.lgpd}</p>
+                )}
+                {status === "error" && (
+                  <p className="mt-3 text-sm text-destructive">
+                    Erro ao enviar. Tenta de novo ou nos contata pelo WhatsApp.
+                  </p>
+                )}
               </div>
 
               <button
@@ -974,6 +1247,8 @@ function FormSection() {
     </section>
   );
 }
+
+// ─── field ────────────────────────────────────────────────────────────────────
 
 function Field({
   id,
@@ -1016,6 +1291,70 @@ function Field({
     </div>
   );
 }
+
+// ─── sticky mobile CTA ────────────────────────────────────────────────────────
+
+function StickyMobileCTA() {
+  const [visible, setVisible] = useState(false);
+  const [nearForm, setNearForm] = useState(false);
+
+  useEffect(() => {
+    const handler = () => {
+      setVisible(window.scrollY > 320);
+      const form = document.getElementById("form");
+      if (form) {
+        setNearForm(form.getBoundingClientRect().top < window.innerHeight * 0.75);
+      }
+    };
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
+  if (!visible || nearForm) return null;
+
+  return (
+    <div
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 px-4 pt-3 bg-gradient-to-t from-bg-primary via-bg-primary/95 to-transparent"
+      style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+    >
+      <a
+        href="#form"
+        className="flex w-full items-center justify-center gap-2 bg-accent-primary py-4 text-sm font-black uppercase tracking-widest text-text-on-accent"
+      >
+        Garantir minha vaga — grátis
+        <ArrowRight className="h-4 w-4" />
+      </a>
+    </div>
+  );
+}
+
+// ─── whatsapp floating button ─────────────────────────────────────────────────
+
+function WhatsAppButton() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setVisible(window.scrollY > 500);
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
+  return (
+    <a
+      href="https://wa.me/5511954369269"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Falar no WhatsApp"
+      className={`hidden md:flex fixed bottom-6 right-6 z-40 h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-xl transition-all duration-300 hover:scale-110 hover:shadow-[0_0_24px_rgba(37,211,102,0.5)] ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+      }`}
+    >
+      <MessageCircle className="h-6 w-6" />
+    </a>
+  );
+}
+
+// ─── footer ───────────────────────────────────────────────────────────────────
 
 function Footer() {
   return (
