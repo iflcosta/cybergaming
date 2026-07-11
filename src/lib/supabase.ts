@@ -5,9 +5,9 @@ const SUPABASE_ANON_KEY = "sb_publishable_ASW_Fvf7CmOsaj3cr08mpA_Q2TFfqUu";
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-export async function getLeadCount(): Promise<number> {
+export async function getLeadCount(): Promise<number | null> {
   const { data, error } = await supabase.rpc("get_lead_count");
-  if (error) return 0;
+  if (error) return null;
   return Number(data) || 0;
 }
 

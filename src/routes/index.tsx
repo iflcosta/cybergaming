@@ -167,10 +167,14 @@ function Reveal({
 
 function useLeadCount() {
   const [count, setCount] = useState<number | null>(null);
+  const [error, setError] = useState(false);
   useEffect(() => {
-    getLeadCount().then(setCount);
+    getLeadCount().then((result) => {
+      if (result === null) setError(true);
+      else setCount(result);
+    });
   }, []);
-  return count;
+  return { count, error };
 }
 
 function useCountdown(target: Date) {
@@ -286,7 +290,7 @@ function GlitchText({ children, className }: { children: string; className?: str
 
 function Hero() {
   const countdown = useCountdown(OPEN_DATE);
-  const takenSpots = useLeadCount();
+  const { count: takenSpots, error: countError } = useLeadCount();
   const remaining = takenSpots !== null ? TOTAL_SPOTS - takenSpots : null;
 
   return (
@@ -356,19 +360,27 @@ function Hero() {
           </a>
 
           <div className="flex flex-col items-center gap-1 md:items-start">
-            <div className="flex items-center gap-2">
-              <span className="font-display text-2xl font-black text-text-primary">
-                {takenSpots ?? "—"}
+            {countError ? (
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-destructive">
+                Erro ao carregar vagas
               </span>
-              <span className="text-text-tertiary">/</span>
-              <span className="text-xl font-medium text-text-tertiary">{TOTAL_SPOTS}</span>
-            </div>
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
-              vagas ocupadas · restam{" "}
-              <span className="text-accent-tertiary font-bold">
-                {remaining ?? "…"}
-              </span>
-            </span>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-2xl font-black text-text-primary">
+                    {takenSpots ?? "—"}
+                  </span>
+                  <span className="text-text-tertiary">/</span>
+                  <span className="text-xl font-medium text-text-tertiary">{TOTAL_SPOTS}</span>
+                </div>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+                  vagas ocupadas · restam{" "}
+                  <span className="text-accent-tertiary font-bold">
+                    {remaining ?? "…"}
+                  </span>
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -510,7 +522,7 @@ function HardwareSection() {
 }
 
 function VoucherSection() {
-  const takenSpots = useLeadCount();
+  const { count: takenSpots, error: countError } = useLeadCount();
   const remaining = takenSpots !== null ? TOTAL_SPOTS - takenSpots : null;
   const percentFilled = takenSpots !== null ? (takenSpots / TOTAL_SPOTS) * 100 : 0;
 
@@ -588,10 +600,18 @@ function VoucherSection() {
             <div className="flex flex-col items-center justify-center gap-6 p-8 text-center md:w-56 md:p-10">
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">Vagas restantes</div>
-                <div className="mt-2 font-mono font-display text-7xl font-black tabular-nums text-accent-primary leading-none">
-                  {remaining ?? "—"}
-                </div>
-                <div className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">de {TOTAL_SPOTS}</div>
+                {countError ? (
+                  <div className="mt-2 text-[10px] font-semibold uppercase tracking-widest text-destructive">
+                    Indisponível
+                  </div>
+                ) : (
+                  <>
+                    <div className="mt-2 font-mono font-display text-7xl font-black tabular-nums text-accent-primary leading-none">
+                      {remaining ?? "—"}
+                    </div>
+                    <div className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">de {TOTAL_SPOTS}</div>
+                  </>
+                )}
               </div>
 
               <div className="w-full">
