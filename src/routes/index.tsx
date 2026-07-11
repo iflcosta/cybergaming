@@ -1053,8 +1053,14 @@ function FormSection() {
     try {
       await insertLead({ nome, whatsapp, email, jogo_principal: jogo, estilo_jogo: estilo, interesse_campeonatos: interesse });
       setStatus("success");
-    } catch {
-      setStatus("error");
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code;
+      if (code === "23505") {
+        setStatus("success");
+      } else {
+        console.error("insertLead failed:", err);
+        setStatus("error");
+      }
     }
   }
 
