@@ -8,6 +8,7 @@ export function Footer() {
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 md:flex-row">
         <Logo />
         <div className="flex gap-8 text-[11px] font-semibold uppercase tracking-widest text-text-tertiary">
+          <Link to="/sobre" className="transition-colors hover:text-text-primary">Sobre</Link>
           <Link to="/privacidade" className="transition-colors hover:text-text-primary">Privacidade</Link>
           <Link to="/termos" className="transition-colors hover:text-text-primary">Termos</Link>
           <a href="mailto:voucher@arena.cyberinformatica.tech" className="transition-colors hover:text-text-primary">Contato</a>
