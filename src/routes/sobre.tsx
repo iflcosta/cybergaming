@@ -62,12 +62,12 @@ function SobrePage() {
             {
               icon: Users,
               title: "Comunidade",
-              text: "Times de society gamer, campeonatos locais, corujões de sexta e sábado. A arena é o ponto de encontro.",
+              text: "Equipes que reservam horário fixo, campeonatos mensais, corujões de sexta e sábado. A arena é o ponto de encontro.",
             },
             {
               icon: Trophy,
               title: "Competição",
-              text: "Rankings mensais, torneios semanais e a oportunidade de representar Bragança no cenário regional.",
+              text: "Rankings e torneios mensais com a oportunidade de representar Bragança no cenário regional.",
             },
             {
               icon: MapPin,
