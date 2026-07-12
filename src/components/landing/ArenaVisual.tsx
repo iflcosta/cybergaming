@@ -1,6 +1,18 @@
+import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Reveal } from "./Reveal";
 
+const ARENA_IMAGES = [
+  { src: "/arena-overview.jpg", alt: "Visão geral da Cyber Brasil Arena — dois times frente a frente" },
+  { src: "/arena-gameplay.jpg", alt: "Estação de jogo da Cyber Brasil Arena — perspectiva do jogador" },
+];
+
 export function ArenaVisualSection() {
+  const [current, setCurrent] = useState(0);
+
+  const prev = () => setCurrent((c) => (c === 0 ? ARENA_IMAGES.length - 1 : c - 1));
+  const next = () => setCurrent((c) => (c === ARENA_IMAGES.length - 1 ? 0 : c + 1));
+
   return (
     <section className="overflow-hidden bg-bg-secondary px-6 py-16 md:py-24">
       <div className="mx-auto max-w-7xl">
@@ -16,98 +28,56 @@ export function ArenaVisualSection() {
           </p>
         </Reveal>
 
-        <Reveal className="relative mx-auto max-w-2xl" delay={100}>
-          {/* Monitor frame */}
+        <Reveal className="relative mx-auto max-w-4xl" delay={100}>
           <div
-            className="relative rounded-xl border border-white/10 bg-bg-tertiary p-1.5"
+            className="relative rounded-xl border border-white/10 bg-bg-tertiary p-1.5 overflow-hidden"
             style={{ boxShadow: "0 25px 60px rgba(176,110,247,0.15), 0 0 0 1px rgba(255,255,255,0.04)" }}
           >
-            {/* Screen */}
-            <div className="relative aspect-video overflow-hidden rounded-lg bg-bg-primary">
-              <div className="absolute inset-0 bg-gradient-to-br from-accent-primary/10 via-bg-primary to-accent-secondary/10" />
-              <div className="absolute inset-0 hero-grid opacity-25" />
-              <div
-                className="pointer-events-none absolute inset-0"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.012) 3px, rgba(255,255,255,0.012) 4px)",
-                }}
-              />
+            <div className="relative aspect-video overflow-hidden rounded-lg">
+              {ARENA_IMAGES.map((img, i) => (
+                <img
+                  key={img.src}
+                  src={img.src}
+                  alt={img.alt}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
+                    i === current ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+              ))}
 
-              {/* HUD */}
-              <div className="absolute inset-3 sm:inset-5 flex flex-col justify-between">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[7px] sm:text-[9px] font-mono uppercase tracking-widest text-text-tertiary w-6">HP</span>
-                      <div className="h-1 sm:h-1.5 w-16 sm:w-24 rounded-full bg-white/5 overflow-hidden">
-                        <div className="h-full w-[78%] rounded-full bg-gradient-to-r from-green-500 to-emerald-400" />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[7px] sm:text-[9px] font-mono uppercase tracking-widest text-text-tertiary w-6">SH</span>
-                      <div className="h-1 sm:h-1.5 w-12 sm:w-20 rounded-full bg-white/5 overflow-hidden">
-                        <div className="h-full w-[45%] rounded-full bg-gradient-to-r from-accent-secondary to-cyan-400" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-[8px] sm:text-[10px] text-green-400/80">8 MS</span>
-                    <span className="font-mono text-[8px] sm:text-[10px] text-accent-secondary/80">240 FPS</span>
-                  </div>
-                </div>
+              <button
+                onClick={prev}
+                aria-label="Imagem anterior"
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                onClick={next}
+                aria-label="Próxima imagem"
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
 
-                <div className="flex items-center justify-center">
-                  <div className="relative w-6 h-6 sm:w-9 sm:h-9">
-                    <div className="absolute top-1/2 w-full h-px bg-accent-secondary/50" />
-                    <div className="absolute left-1/2 h-full w-px bg-accent-secondary/50" />
-                    <div className="absolute inset-[25%] rounded-full border border-accent-secondary/40" />
-                    <div className="absolute inset-[44%] rounded-full bg-accent-secondary/70" />
-                  </div>
-                </div>
-
-                <div className="flex items-end justify-between">
-                  <div className="flex gap-1.5">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className={`w-6 h-6 sm:w-8 sm:h-8 rounded border flex items-center justify-center ${
-                          i === 1
-                            ? "border-accent-primary/60 bg-accent-primary/10"
-                            : "border-white/10 bg-white/5"
-                        }`}
-                      >
-                        <span className="text-[7px] sm:text-[9px] font-mono text-text-tertiary">{i}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="text-right">
-                    <div className="font-mono text-[8px] sm:text-[10px] text-text-tertiary">ROUND 12</div>
-                    <div className="font-display font-black text-base sm:text-xl text-text-primary">
-                      <span className="text-accent-secondary">12</span>
-                      <span className="text-text-tertiary mx-1">:</span>
-                      <span className="text-destructive">8</span>
-                    </div>
-                  </div>
-                </div>
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+                {ARENA_IMAGES.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrent(i)}
+                    aria-label={`Imagem ${i + 1}`}
+                    className={`h-2 rounded-full transition-all ${
+                      i === current ? "w-6 bg-accent-primary" : "w-2 bg-white/40"
+                    }`}
+                  />
+                ))}
               </div>
-
-              <div
-                className="pointer-events-none absolute inset-0 rounded-lg"
-                style={{ boxShadow: "inset 0 0 60px rgba(176,110,247,0.07)" }}
-              />
             </div>
-          </div>
-
-          {/* Monitor stand */}
-          <div className="mx-auto flex flex-col items-center">
-            <div className="w-16 h-3 bg-bg-tertiary rounded-b-sm" />
-            <div className="w-28 h-1.5 bg-white/5 rounded-sm" />
           </div>
 
           <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-10 bg-accent-primary/10 blur-2xl rounded-full" />
 
-          {/* Floating spec tags — desktop only */}
           {[
             { label: "180Hz", sub: "Monitor", color: "text-accent-primary", border: "border-accent-primary/30", pos: "-left-24 top-8" },
             { label: "RX 7600", sub: "GPU", color: "text-accent-secondary", border: "border-accent-secondary/30", pos: "-right-24 top-8" },
@@ -123,7 +93,6 @@ export function ArenaVisualSection() {
           ))}
         </Reveal>
 
-        {/* Mobile spec chips */}
         <div className="mt-8 grid grid-cols-2 gap-3 lg:hidden">
           {[
             { v: "180Hz", l: "Monitor", c: "text-accent-primary", b: "border-accent-primary/20" },
