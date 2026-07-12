@@ -18,6 +18,11 @@ export async function insertLead(payload: {
   jogo_principal: string;
   estilo_jogo: string;
   interesse_campeonatos: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_term?: string;
+  utm_content?: string;
 }) {
   const { error } = await supabase.from("leads").insert(payload);
   if (error) throw error;
