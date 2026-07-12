@@ -21,7 +21,6 @@ const PRICING = [
     color: "text-accent-primary",
     border: "border-accent-primary/20",
     bg: "bg-accent-primary/5",
-    popular: true,
   },
   {
     icon: Package,
@@ -32,6 +31,7 @@ const PRICING = [
     color: "text-accent-secondary",
     border: "border-accent-secondary/20",
     bg: "bg-accent-secondary/5",
+    popular: true,
   },
   {
     icon: Moon,
