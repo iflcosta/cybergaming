@@ -41,6 +41,7 @@ type Lead = {
   utm_medium?: string;
   utm_campaign?: string;
   origem_url?: string;
+  is_seed?: boolean;
 };
 
 // ─── auth gate ───────────────────────────────────────────────────────────────
@@ -378,7 +379,14 @@ function Dashboard() {
                   <td className="px-4 py-3 font-mono text-xs text-text-tertiary tabular-nums">
                     {leads.length - leads.indexOf(lead)}
                   </td>
-                  <td className="px-4 py-3 font-semibold text-text-primary">{lead.nome}</td>
+                  <td className="px-4 py-3 font-semibold text-text-primary">
+                    {lead.nome}
+                    {lead.is_seed && (
+                      <span className="ml-2 inline-block rounded bg-yellow-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-yellow-400 border border-yellow-500/20">
+                        seed
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-text-secondary">{lead.email}</td>
                   <td className="px-4 py-3 font-mono text-xs text-text-secondary">{lead.whatsapp}</td>
                   <td className="px-4 py-3">
