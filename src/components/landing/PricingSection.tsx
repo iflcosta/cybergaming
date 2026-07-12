@@ -7,7 +7,7 @@ const PRICING = [
     title: "Hora Vale",
     price: "R$ 12",
     unit: "/hora",
-    desc: "Seg a Sex, 08h às 17h",
+    desc: "Seg a Sex, 10h às 17h",
     color: "text-green-400",
     border: "border-green-500/20",
     bg: "bg-green-500/5",
