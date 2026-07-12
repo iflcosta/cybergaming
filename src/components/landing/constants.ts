@@ -33,7 +33,8 @@ export const HARDWARE_SPECS = [
 
 export const NAV_LINKS = [
   { href: "#arena", label: "Arena" },
-  { href: "#hardware", label: "Hardware" },
+  { href: "#setup", label: "Setup" },
+  { href: "#precos", label: "Preços" },
   { href: "#voucher", label: "Voucher" },
   { href: "#faq", label: "FAQ" },
 ] as const;

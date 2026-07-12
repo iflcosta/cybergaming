@@ -3,8 +3,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Reveal } from "./Reveal";
 
 const ARENA_IMAGES = [
-  { src: "/arena-overview.jpg", alt: "Visão geral da Cyber Brasil Arena — dois times frente a frente" },
-  { src: "/arena-gameplay.jpg", alt: "Estação de jogo da Cyber Brasil Arena — perspectiva do jogador" },
+  { src: "/arena-overview.webp", alt: "Visão geral da Cyber Brasil Arena — dois times frente a frente" },
+  { src: "/arena-gameplay.webp", alt: "Estação de jogo da Cyber Brasil Arena — perspectiva do jogador" },
 ];
 
 export function ArenaVisualSection() {

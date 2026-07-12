@@ -5,7 +5,9 @@ import { Hero } from "@/components/landing/Hero";
 import { StatsBar } from "@/components/landing/StatsBar";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { ArenaVisualSection } from "@/components/landing/ArenaVisual";
+import { SetupSection } from "@/components/landing/SetupSection";
 import { HardwareSection } from "@/components/landing/HardwareSection";
+import { PricingSection } from "@/components/landing/PricingSection";
 import { VoucherSection } from "@/components/landing/VoucherSection";
 import { FAQSection } from "@/components/landing/FAQSection";
 import { FormSection } from "@/components/landing/FormSection";
@@ -66,7 +68,9 @@ function LandingPage() {
         <StatsBar />
         <HowItWorks />
         <ArenaVisualSection />
+        <SetupSection />
         <HardwareSection />
+        <PricingSection />
         <VoucherSection />
         <FAQSection />
         <FormSection />
