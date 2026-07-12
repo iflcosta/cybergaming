@@ -26,7 +26,7 @@ function RadioGroup<T extends string>({
       <div className="ml-1 text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
         {label}
       </div>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
         {options.map((opt) => (
           <label
             key={opt.value}

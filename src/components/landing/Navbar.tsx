@@ -51,7 +51,7 @@ export function Navbar() {
 
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="md:hidden flex h-10 w-10 items-center justify-center border border-white/10 text-text-secondary transition-colors hover:border-accent-primary/40 hover:text-accent-primary"
+            className="md:hidden flex h-11 w-11 items-center justify-center border border-white/10 text-text-secondary transition-colors hover:border-accent-primary/40 hover:text-accent-primary"
             aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
             aria-expanded={menuOpen}
           >
