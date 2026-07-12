@@ -97,7 +97,7 @@ export function VoucherSection() {
                   <div>
                     <div className="font-bold text-text-primary">OFF vitalício em toda visita</div>
                     <div className="mt-1 text-sm text-text-secondary">
-                      Mantendo R$60+/mês na arena o desconto nunca expira. Quanto mais você joga, mais economiza.
+                      Mantendo 4h+ de uso por mês o desconto nunca expira. Quanto mais você joga, mais economiza.
                     </div>
                   </div>
                 </div>

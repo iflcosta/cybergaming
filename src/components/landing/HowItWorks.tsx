@@ -10,7 +10,7 @@ export function HowItWorks() {
     {
       n: "02",
       t: "Receba o voucher",
-      s: "Instantaneamente no seu email: 25% OFF na primeira visita + 10% vitalício pra quem jogar R$60+/mês. Tudo junto.",
+      s: "Instantaneamente no seu email: 25% OFF na primeira visita + 10% vitalício pra quem jogar 4h+/mês. Tudo junto.",
     },
     {
       n: "03",

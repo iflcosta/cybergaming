@@ -18,7 +18,7 @@ export const JOGOS = [
 
 export const FAQ_ITEMS = [
   { q: "Quanto custa pra entrar na lista?", a: "Nada. A inscrição é 100% gratuita. Você não paga nada pra garantir sua vaga e receber o voucher de founding member." },
-  { q: "O que eu ganho como founding member?", a: "25% OFF no primeiro pacote de horas + 10% vitalício em tudo (exceto snacks e bebidas) enquanto mantiver frequência de R$60+/mês." },
+  { q: "O que eu ganho como founding member?", a: "25% OFF no primeiro pacote de horas + 10% vitalício em tudo (exceto snacks e bebidas) enquanto mantiver 4h+ de uso por mês." },
   { q: "Quando a arena abre?", a: "Previsão para Setembro de 2026. Founding members recebem acesso prioritário no dia da inauguração." },
   { q: "Precisa ter PC? Precisa levar algo?", a: "Nada. Nossos 10 PCs têm tudo: periféricos de alto padrão inclusos. É só sentar e jogar." },
   { q: "Posso cancelar quando quiser?", a: "Sim. Você pode sair da lista a qualquer momento, sem custo, sem burocracia. Seus dados ficam protegidos pela LGPD." },
