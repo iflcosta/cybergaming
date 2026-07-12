@@ -9,6 +9,7 @@ const ARENA_IMAGES = [
 
 export function ArenaVisualSection() {
   const [current, setCurrent] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
 
   const prev = () => setCurrent((c) => (c === 0 ? ARENA_IMAGES.length - 1 : c - 1));
   const next = () => setCurrent((c) => (c === ARENA_IMAGES.length - 1 ? 0 : c + 1));
@@ -33,7 +34,16 @@ export function ArenaVisualSection() {
             className="relative rounded-xl border border-white/10 bg-bg-tertiary p-1.5 overflow-hidden"
             style={{ boxShadow: "0 25px 60px rgba(176,110,247,0.15), 0 0 0 1px rgba(255,255,255,0.04)" }}
           >
-            <div className="relative aspect-video overflow-hidden rounded-lg">
+            <div
+              className="relative aspect-video overflow-hidden rounded-lg"
+              onTouchStart={(e) => setTouchStart(e.touches[0].clientX)}
+              onTouchEnd={(e) => {
+                if (touchStart === null) return;
+                const diff = touchStart - e.changedTouches[0].clientX;
+                if (Math.abs(diff) > 50) diff > 0 ? next() : prev();
+                setTouchStart(null);
+              }}
+            >
               {ARENA_IMAGES.map((img, i) => (
                 <img
                   key={img.src}
@@ -49,28 +59,32 @@ export function ArenaVisualSection() {
               <button
                 onClick={prev}
                 aria-label="Imagem anterior"
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <button
                 onClick={next}
                 aria-label="Próxima imagem"
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
 
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-1">
                 {ARENA_IMAGES.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrent(i)}
                     aria-label={`Imagem ${i + 1}`}
-                    className={`h-2 rounded-full transition-all ${
-                      i === current ? "w-6 bg-accent-primary" : "w-2 bg-white/40"
-                    }`}
-                  />
+                    className="flex h-8 w-8 items-center justify-center"
+                  >
+                    <span
+                      className={`block h-2 rounded-full transition-all ${
+                        i === current ? "w-6 bg-accent-primary" : "w-2 bg-white/40"
+                      }`}
+                    />
+                  </button>
                 ))}
               </div>
             </div>

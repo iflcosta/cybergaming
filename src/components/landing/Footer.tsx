@@ -18,7 +18,7 @@ export function Footer() {
             aria-label="WhatsApp"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-text-secondary transition-all hover:border-accent-secondary hover:text-accent-secondary"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-text-secondary transition-all hover:border-accent-secondary hover:text-accent-secondary"
           >
             <MessageCircle className="h-4 w-4" />
           </a>
@@ -27,7 +27,7 @@ export function Footer() {
             aria-label="Instagram"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-text-secondary transition-all hover:border-accent-tertiary hover:text-accent-tertiary"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-text-secondary transition-all hover:border-accent-tertiary hover:text-accent-tertiary"
           >
             <Instagram className="h-4 w-4" />
           </a>
