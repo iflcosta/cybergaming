@@ -173,6 +173,7 @@ export function FormSection() {
         jogo_principal: jogo === "Outro" ? jogoOutro || "Outro" : jogo,
         estilo_jogo: estilo,
         interesse_campeonatos: interesse,
+        lgpd_aceito: checked,
         ...utm,
       });
       setStatus("success");

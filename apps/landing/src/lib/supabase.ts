@@ -18,6 +18,7 @@ export async function insertLead(payload: {
   jogo_principal: string;
   estilo_jogo: string;
   interesse_campeonatos: string;
+  lgpd_aceito: boolean;
   utm_source?: string;
   utm_medium?: string;
   utm_campaign?: string;
