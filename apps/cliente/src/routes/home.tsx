@@ -11,7 +11,6 @@ interface PackageRow {
   price_cents: number;
   duration_min: number;
   detail: string | null;
-  founding_price_cents: number | null;
   sort_order: number;
 }
 
@@ -33,6 +32,7 @@ export function HomePage() {
   const [packages, setPackages] = useState<PackageRow[]>([]);
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [now, setNow] = useState(new Date());
+  const [discountPct, setDiscountPct] = useState(0);
 
   useEffect(() => {
     supabase
@@ -42,6 +42,13 @@ export function HomePage() {
       .order("sort_order")
       .then(({ data }) => setPackages((data as PackageRow[]) ?? []));
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc("get_customer_discount_pct", { p_customer_id: user.id }).then(({ data }) => {
+      setDiscountPct(typeof data === "number" ? data : 0);
+    });
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -66,9 +73,10 @@ export function HomePage() {
     return () => { supabase.removeChannel(ch); clearInterval(tick); };
   }, [user]);
 
+  const discounted = (cents: number) => Math.round(cents * (100 - discountPct) / 100);
   const rates = {
-    vale_cents: packages.find((p) => p.code === "hora_vale")?.price_cents ?? 1200,
-    pico_cents: packages.find((p) => p.code === "hora_pico")?.price_cents ?? 1500,
+    vale_cents: discounted(packages.find((p) => p.code === "hora_vale")?.price_cents ?? 1200),
+    pico_cents: discounted(packages.find((p) => p.code === "hora_pico")?.price_cents ?? 2500),
   };
 
   const isOpenSession = session != null && session.package_type === null;
@@ -195,32 +203,31 @@ export function HomePage() {
             Pacotes disponíveis
           </h2>
           <div className="grid grid-cols-2 gap-3">
-            {packages.map((p) => {
-              const founding = profile?.is_founding_member && p.founding_price_cents;
-              return (
-                <div
-                  key={p.code}
-                  className="rounded-xl p-4"
-                  style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}
-                >
-                  <p className="text-xs text-[--muted] mb-2">{p.label}</p>
-                  {founding ? (
-                    <>
-                      <p className="text-xl font-black" style={{ color: PKG_COLORS[p.code] ?? "var(--amber)" }}>
-                        {formatCents(p.founding_price_cents!)}
-                      </p>
-                      <p className="text-[10px] text-[--muted] line-through">{formatCents(p.price_cents)}</p>
-                      <p className="text-[10px] font-bold" style={{ color: "var(--amber)" }}>★ preço Founding</p>
-                    </>
-                  ) : (
+            {packages.map((p) => (
+              <div
+                key={p.code}
+                className="rounded-xl p-4"
+                style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}
+              >
+                <p className="text-xs text-[--muted] mb-2">{p.label}</p>
+                {discountPct > 0 ? (
+                  <>
                     <p className="text-xl font-black" style={{ color: PKG_COLORS[p.code] ?? "var(--amber)" }}>
-                      {formatCents(p.price_cents)}
+                      {formatCents(discounted(p.price_cents))}
                     </p>
-                  )}
-                  {p.detail && <p className="text-[10px] text-[--muted] mt-1">{p.detail}</p>}
-                </div>
-              );
-            })}
+                    <p className="text-[10px] text-[--muted] line-through">{formatCents(p.price_cents)}</p>
+                    <p className="text-[10px] font-bold" style={{ color: "var(--amber)" }}>
+                      ★ {discountPct === 25 ? "Voucher −25%" : "Founding −10%"}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-xl font-black" style={{ color: PKG_COLORS[p.code] ?? "var(--amber)" }}>
+                    {formatCents(p.price_cents)}
+                  </p>
+                )}
+                {p.detail && <p className="text-[10px] text-[--muted] mt-1">{p.detail}</p>}
+              </div>
+            ))}
           </div>
         </div>
 

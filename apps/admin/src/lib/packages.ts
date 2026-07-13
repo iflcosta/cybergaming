@@ -7,7 +7,6 @@ export interface PackageInfo {
   price_cents: number;
   duration_min: number;
   detail: string;
-  founding_price_cents?: number;
 }
 
 interface PackageRow {
@@ -16,7 +15,6 @@ interface PackageRow {
   price_cents: number;
   duration_min: number;
   detail: string | null;
-  founding_price_cents: number | null;
   is_active: boolean;
 }
 
@@ -40,7 +38,6 @@ export function usePackages(): Record<PackageType, PackageInfo> {
               price_cents: row.price_cents,
               duration_min: row.duration_min,
               detail: row.detail ?? next[row.code].detail,
-              founding_price_cents: row.founding_price_cents ?? undefined,
             };
           }
         }

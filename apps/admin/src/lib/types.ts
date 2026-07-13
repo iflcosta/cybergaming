@@ -59,7 +59,7 @@ export interface BillingSegment {
 export function computeOpenBillingPreview(
   startedAt: Date,
   endAt: Date = new Date(),
-  rates: { vale_cents: number; pico_cents: number } = { vale_cents: 1200, pico_cents: 1500 },
+  rates: { vale_cents: number; pico_cents: number } = { vale_cents: 1200, pico_cents: 2500 },
 ): { segments: BillingSegment[]; totalCents: number } {
   const TZ = "America/Sao_Paulo";
   const segments: BillingSegment[] = [];
@@ -131,10 +131,10 @@ export interface Transaction {
   customer?: Profile;
 }
 
-export const PACKAGES: Record<PackageType, { label: string; price_cents: number; duration_min: number; detail: string; founding_price_cents?: number }> = {
+export const PACKAGES: Record<PackageType, { label: string; price_cents: number; duration_min: number; detail: string }> = {
   hora_vale:  { label: "Hora Vale",  price_cents: 1200, duration_min: 60,  detail: "Seg–Sex até 18h" },
-  hora_pico:  { label: "Hora Pico",  price_cents: 1500, duration_min: 60,  detail: "Pico e fins de semana" },
-  pacote_3h:  { label: "Pacote 3h",  price_cents: 4990, duration_min: 180, detail: "Popular ⭐", founding_price_cents: 3900 },
+  hora_pico:  { label: "Hora Pico",  price_cents: 2500, duration_min: 60,  detail: "Pico e fins de semana" },
+  pacote_3h:  { label: "Pacote 3h",  price_cents: 4990, duration_min: 180, detail: "Popular ⭐" },
   corujao:    { label: "Corujão",    price_cents: 7990, duration_min: 480, detail: "Sex/Sáb · 22h–06h" },
 };
 

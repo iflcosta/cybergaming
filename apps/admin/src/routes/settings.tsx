@@ -10,7 +10,6 @@ interface PackageRow {
   price_cents: number;
   duration_min: number;
   detail: string | null;
-  founding_price_cents: number | null;
   is_active: boolean;
   sort_order: number;
 }
@@ -35,7 +34,7 @@ export function SettingsPage() {
 /* ---------- Tarifas ---------- */
 function PackagesSection() {
   const [rows, setRows] = useState<PackageRow[]>([]);
-  const [edited, setEdited] = useState<Record<string, { price: string; founding: string }>>({});
+  const [edited, setEdited] = useState<Record<string, string>>({});
 
   async function load() {
     const { data } = await supabase.from("packages").select("*").order("sort_order");
@@ -44,16 +43,13 @@ function PackagesSection() {
   useEffect(() => { load(); }, []);
 
   async function save(row: PackageRow) {
-    const e = edited[row.code];
-    if (!e) return;
-    const price_cents = Math.round(parseFloat(e.price.replace(",", ".")) * 100);
-    const founding = e.founding.trim()
-      ? Math.round(parseFloat(e.founding.replace(",", ".")) * 100)
-      : null;
+    const priceStr = edited[row.code];
+    if (priceStr === undefined) return;
+    const price_cents = Math.round(parseFloat(priceStr.replace(",", ".")) * 100);
     if (isNaN(price_cents) || price_cents < 0) { toast.error("Preço inválido"); return; }
     const { error } = await supabase
       .from("packages")
-      .update({ price_cents, founding_price_cents: founding, updated_at: new Date().toISOString() })
+      .update({ price_cents, updated_at: new Date().toISOString() })
       .eq("code", row.code);
     if (error) { toast.error("Erro ao salvar tarifa"); return; }
     toast.success(`${row.label} atualizado`);
@@ -62,14 +58,11 @@ function PackagesSection() {
   }
 
   return (
-    <Section title="Tarifas" subtitle="Preços aplicados no PDV, sessão aberta e app do cliente">
-      <div className="flex flex-col gap-2">
+    <Section title="Tarifas" subtitle="Preços aplicados no PDV, sessão aberta, reservas e app do cliente">
+      <div className="flex flex-col gap-2 mb-3">
         {rows.map((r) => {
-          const e = edited[r.code] ?? {
-            price: (r.price_cents / 100).toFixed(2).replace(".", ","),
-            founding: r.founding_price_cents ? (r.founding_price_cents / 100).toFixed(2).replace(".", ",") : "",
-          };
-          const dirty = !!edited[r.code];
+          const priceStr = edited[r.code] ?? (r.price_cents / 100).toFixed(2).replace(".", ",");
+          const dirty = edited[r.code] !== undefined;
           return (
             <div key={r.code} className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
               <div className="flex-1">
@@ -78,18 +71,9 @@ function PackagesSection() {
               </div>
               <label className="text-[10px] text-slate-500 uppercase">Preço R$</label>
               <input
-                value={e.price}
-                onChange={(ev) => setEdited({ ...edited, [r.code]: { ...e, price: ev.target.value } })}
+                value={priceStr}
+                onChange={(ev) => setEdited({ ...edited, [r.code]: ev.target.value })}
                 className="w-20 px-2 py-1.5 rounded text-sm text-right border text-white focus:outline-none"
-                style={{ background: "var(--bg)", borderColor: "var(--dim)" }}
-                inputMode="decimal"
-              />
-              <label className="text-[10px] text-slate-500 uppercase">Founding R$</label>
-              <input
-                value={e.founding}
-                onChange={(ev) => setEdited({ ...edited, [r.code]: { ...e, founding: ev.target.value } })}
-                placeholder="—"
-                className="w-20 px-2 py-1.5 rounded text-sm text-right border text-white placeholder:text-slate-600 focus:outline-none"
                 style={{ background: "var(--bg)", borderColor: "var(--dim)" }}
                 inputMode="decimal"
               />
@@ -105,6 +89,10 @@ function PackagesSection() {
           );
         })}
       </div>
+      <p className="text-[11px] text-slate-500">
+        Desconto Founding Member é automático: <b className="text-white">25%</b> na primeira compra (voucher, válido 60 dias do cadastro) e{" "}
+        <b className="text-white">10%</b> vitalício depois — calculado sobre o preço acima, sem precisar editar nada aqui.
+      </p>
     </Section>
   );
 }

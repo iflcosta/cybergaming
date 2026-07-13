@@ -32,10 +32,19 @@ export function EndSessionModal({ session, onClose, onSuccess }: Props) {
   }, [isOpen]);
 
   const packages = usePackages();
+  const [discountPct, setDiscountPct] = useState(0);
+
+  useEffect(() => {
+    if (!isOpen || !session.customer_id) return;
+    supabase.rpc("get_customer_discount_pct", { p_customer_id: session.customer_id }).then(({ data }) => {
+      setDiscountPct(typeof data === "number" ? data : 0);
+    });
+  }, [isOpen, session.customer_id]);
+
   const preview = isOpen
     ? computeOpenBillingPreview(new Date(session.started_at), now, {
-        vale_cents: packages.hora_vale.price_cents,
-        pico_cents: packages.hora_pico.price_cents,
+        vale_cents: Math.round(packages.hora_vale.price_cents * (100 - discountPct) / 100),
+        pico_cents: Math.round(packages.hora_pico.price_cents * (100 - discountPct) / 100),
       })
     : null;
 
@@ -112,7 +121,11 @@ export function EndSessionModal({ session, onClose, onSuccess }: Props) {
               <span className="text-xs text-slate-400">Total</span>
               <div className="text-right">
                 <span className="text-xl font-black" style={{ color: "var(--amber)" }}>{formatCents(displayCents)}</span>
-                {isOpen && <p className="text-[10px] text-slate-600">atualizado a cada 10s</p>}
+                {isOpen && (
+                  <p className="text-[10px] text-slate-600">
+                    atualizado a cada 10s{discountPct > 0 ? ` · desconto Founding −${discountPct}%` : ""}
+                  </p>
+                )}
               </div>
             </div>
           </div>

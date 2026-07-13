@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X, Search, Check, UserX } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -31,13 +31,21 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
 
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const packages = usePackages();
+  const [discountPct, setDiscountPct] = useState(0);
 
-  const isFounding = customer !== "avulso" && !!(customer as Profile | null)?.is_founding_member;
+  const customerId = customer !== "avulso" ? (customer as Profile | null)?.id ?? null : null;
+
+  useEffect(() => {
+    if (!customerId) { setDiscountPct(0); return; }
+    supabase.rpc("get_customer_discount_pct", { p_customer_id: customerId }).then(({ data }) => {
+      setDiscountPct(typeof data === "number" ? data : 0);
+    });
+  }, [customerId]);
 
   /** Price the selected customer actually pays for a package. */
   function effectivePrice(key: PackageType): number {
-    const p = packages[key];
-    return isFounding && p.founding_price_cents ? p.founding_price_cents : p.price_cents;
+    const base = packages[key].price_cents;
+    return discountPct > 0 ? Math.round(base * (100 - discountPct) / 100) : base;
   }
 
   function searchCustomers(q: string) {
@@ -65,7 +73,6 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
 
     setLoading(true);
     const now = new Date();
-    const customerId = isAvulso ? null : (customer as Profile)?.id ?? null;
     let transactionId: string | null = null;
     let priceCents = 0;
     let plannedEnd: Date | null = null;
@@ -106,6 +113,11 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
           return;
         }
         transactionId = tx.id;
+
+        // One-time inaugural voucher (25% off) is consumed on first use
+        if (discountPct === 25) {
+          await supabase.rpc("consume_founding_voucher", { p_customer_id: customerId });
+        }
       }
     }
 
@@ -274,7 +286,7 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {(Object.entries(packages) as [PackageType, PackageInfo][]).map(([key, p]) => {
-                  const discounted = isFounding && p.founding_price_cents;
+                  const discounted = discountPct > 0;
                   return (
                     <button
                       key={key}
@@ -285,9 +297,11 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
                       <p className="text-xs text-slate-400 mb-1">{p.label}</p>
                       {discounted ? (
                         <>
-                          <p className="text-xl font-black" style={{ color: "var(--amber)" }}>{formatCents(p.founding_price_cents!)}</p>
+                          <p className="text-xl font-black" style={{ color: "var(--amber)" }}>{formatCents(effectivePrice(key))}</p>
                           <p className="text-[10px] text-slate-500 line-through">{formatCents(p.price_cents)}</p>
-                          <p className="text-[10px] font-bold" style={{ color: "var(--amber)" }}>★ Founding Member</p>
+                          <p className="text-[10px] font-bold" style={{ color: "var(--amber)" }}>
+                            ★ {discountPct === 25 ? "Voucher inaugural −25%" : "Founding −10%"}
+                          </p>
                         </>
                       ) : (
                         <p className="text-xl font-black text-white">{formatCents(p.price_cents)}</p>
@@ -345,8 +359,10 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
                         <span className="text-xl font-black" style={{ color: "var(--amber)" }}>
                           {formatCents(effectivePrice(pkg))}
                         </span>
-                        {isFounding && packages[pkg].founding_price_cents && (
-                          <p className="text-[10px] font-bold" style={{ color: "var(--amber)" }}>★ desconto Founding</p>
+                        {discountPct > 0 && (
+                          <p className="text-[10px] font-bold" style={{ color: "var(--amber)" }}>
+                            ★ {discountPct === 25 ? "Voucher inaugural −25%" : "Founding −10%"}
+                          </p>
                         )}
                       </>
                     ) : (
