@@ -13,13 +13,34 @@ interface CreditTx {
 }
 
 const AMOUNTS = [1000, 2000, 5000, 10000];
+const MIN_CENTS = 500;
+const MAX_CENTS = 50000;
 
 export function CreditosPage() {
   const { user, profile } = useAuth();
   const [history, setHistory] = useState<CreditTx[]>([]);
   const [amount, setAmount] = useState<number | null>(null);
+  const [custom, setCustom] = useState(false);
+  const [customValue, setCustomValue] = useState("");
   const [saving, setSaving] = useState(false);
   const [payingOnline, setPayingOnline] = useState(false);
+
+  function onCustomChange(v: string) {
+    setCustomValue(v);
+    const cents = Math.round(parseFloat(v.replace(",", ".")) * 100);
+    setAmount(Number.isFinite(cents) && cents >= MIN_CENTS && cents <= MAX_CENTS ? cents : null);
+  }
+
+  function selectPreset(a: number) {
+    setCustom(false);
+    setCustomValue("");
+    setAmount(a);
+  }
+
+  function selectCustom() {
+    setCustom(true);
+    setAmount(null);
+  }
 
   async function load() {
     if (!user) return;
@@ -77,6 +98,8 @@ export function CreditosPage() {
     window.open(data.invoice_url, "_blank");
     toast.success("Cobrança gerada! Finalize o pagamento na aba que abriu.");
     setAmount(null);
+    setCustom(false);
+    setCustomValue("");
     load();
   }
 
@@ -102,19 +125,45 @@ export function CreditosPage() {
       <div className="rounded-xl p-4 mb-6 flex flex-col gap-3"
         style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
         <p className="text-xs font-bold uppercase tracking-widest text-[--muted]">Adicionar créditos</p>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {AMOUNTS.map((a) => (
-            <button key={a} onClick={() => setAmount(a)}
+            <button key={a} onClick={() => selectPreset(a)}
               className="py-2.5 rounded-lg text-sm font-bold"
               style={{
-                background: amount === a ? "var(--amber)" : "var(--bg)",
-                color: amount === a ? "#09090f" : "var(--text)",
-                border: `1px solid ${amount === a ? "var(--amber)" : "var(--dim)"}`,
+                background: !custom && amount === a ? "var(--amber)" : "var(--bg)",
+                color: !custom && amount === a ? "#09090f" : "var(--text)",
+                border: `1px solid ${!custom && amount === a ? "var(--amber)" : "var(--dim)"}`,
               }}>
               {formatCents(a).replace(",00", "")}
             </button>
           ))}
+          <button onClick={selectCustom}
+            className="py-2.5 rounded-lg text-sm font-bold"
+            style={{
+              background: custom ? "var(--amber)" : "var(--bg)",
+              color: custom ? "#09090f" : "var(--text)",
+              border: `1px solid ${custom ? "var(--amber)" : "var(--dim)"}`,
+            }}>
+            Personalizado
+          </button>
         </div>
+        {custom && (
+          <div className="flex flex-col gap-1">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[--muted]">R$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                autoFocus
+                value={customValue}
+                onChange={(e) => onCustomChange(e.target.value)}
+                placeholder="0,00"
+                className="w-full pl-9 pr-3 py-2.5 rounded-lg text-sm bg-[--bg] border border-[--dim] text-[--text] placeholder:text-[--dim] focus:outline-none focus:border-[--amber]"
+              />
+            </div>
+            <p className="text-[10px] text-[--muted]">Entre R$5,00 e R$500,00</p>
+          </div>
+        )}
         <button onClick={payOnline} disabled={!amount || payingOnline || saving}
           className="w-full py-3 rounded-lg font-bold text-sm uppercase tracking-wider disabled:opacity-50"
           style={{ background: "var(--amber)", color: "#09090f" }}>
