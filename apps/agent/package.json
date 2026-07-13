@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "Cyber Brasil Arena — agente de máquina (bloqueia/libera o PC conforme a sessão no Supabase)",
-  "main": "dist/main/index.js",
+  "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
@@ -30,8 +30,7 @@
     "appId": "tech.cyberinformatica.arena.agent",
     "productName": "Cyber Brasil Arena Agent",
     "win": {
-      "target": "nsis",
-      "icon": "resources/icon.ico"
+      "target": "nsis"
     },
     "nsis": {
       "oneClick": true,
