@@ -1,11 +1,21 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { pairAgent } from "@/lib/supabase";
 import type { AgentConfig } from "../../../main/store";
+
+const QUIT_HOLD_MS = 3000;
 
 export function SetupScreen({ onPaired }: { onPaired: (config: AgentConfig) => void }) {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const quitHoldRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleQuitPointerDown() {
+    quitHoldRef.current = setTimeout(() => window.agent.quit(), QUIT_HOLD_MS);
+  }
+  function handleQuitPointerUp() {
+    if (quitHoldRef.current) clearTimeout(quitHoldRef.current);
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,6 +66,14 @@ export function SetupScreen({ onPaired }: { onPaired: (config: AgentConfig) => v
         </button>
         <p style={styles.hint}>Gere o código no painel admin → Config → PCs</p>
       </form>
+
+      {/* Invisible maintenance hotspot: hold 3s to quit (staff only) */}
+      <div
+        onPointerDown={handleQuitPointerDown}
+        onPointerUp={handleQuitPointerUp}
+        onPointerLeave={handleQuitPointerUp}
+        style={styles.maintenanceHotspot}
+      />
     </div>
   );
 }
@@ -65,7 +83,9 @@ const styles: Record<string, React.CSSProperties> = {
     height: "100vh", width: "100vw", display: "flex", flexDirection: "column",
     alignItems: "center", justifyContent: "center", background: "#09090f",
     fontFamily: "system-ui, -apple-system, sans-serif", color: "#f8fafc",
+    position: "relative",
   },
+  maintenanceHotspot: { position: "absolute", bottom: 0, right: 0, width: 60, height: 60 },
   eyebrow: { fontSize: 11, fontWeight: 700, letterSpacing: 4, color: "#64748b", margin: 0 },
   title: { fontSize: 32, fontWeight: 900, letterSpacing: -1, margin: "4px 0 32px" },
   subtitle: { fontSize: 13, color: "#94a3b8", marginTop: -24, marginBottom: 32 },
