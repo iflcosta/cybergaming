@@ -1,12 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { formatCents, type Profile } from "@/lib/types";
+import { formatCents, type Profile, type UserRole } from "@/lib/types";
+import { useAuth } from "@/contexts/auth";
+
+const ROLES: UserRole[] = ["customer", "staff", "admin"];
 
 export function CustomersPage() {
+  const { profile: me } = useAuth();
   const [customers, setCustomers] = useState<Profile[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+
+  async function changeRole(c: Profile, role: UserRole) {
+    if (c.id === me?.id) { toast.error("Você não pode alterar seu próprio cargo"); return; }
+    const { data, error } = await supabase.rpc("set_user_role", { p_user_id: c.id, p_role: role });
+    if (error || !data?.ok) { toast.error("Erro ao alterar cargo"); return; }
+    toast.success(`${c.full_name ?? c.email} agora é ${role}`);
+    load(search);
+  }
 
   async function load(q = "") {
     setLoading(true);
@@ -61,7 +74,7 @@ export function CustomersPage() {
           <table className="w-full text-sm">
             <thead style={{ background: "var(--surface)" }}>
               <tr>
-                {["Nome", "Contato", "Créditos", "Perfil", "Cadastro"].map((h) => (
+                {["Nome", "Contato", "Créditos", "Perfil", "Cadastro", me?.role === "admin" ? "Cargo" : ""].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -100,6 +113,19 @@ export function CustomersPage() {
                   <td className="px-4 py-3 text-slate-500 text-xs">
                     {new Date(c.created_at).toLocaleDateString("pt-BR")}
                   </td>
+                  {me?.role === "admin" && (
+                    <td className="px-4 py-3">
+                      <select
+                        value={c.role}
+                        onChange={(e) => changeRole(c, e.target.value as UserRole)}
+                        disabled={c.id === me.id}
+                        className="text-xs px-2 py-1 rounded border text-white disabled:opacity-40 focus:outline-none"
+                        style={{ background: "var(--bg)", borderColor: "var(--dim)" }}
+                      >
+                        {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

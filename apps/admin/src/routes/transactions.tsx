@@ -93,6 +93,19 @@ export function TransactionsPage() {
 
   if (loading) return <div className="text-slate-500 text-sm">Carregando…</div>;
 
+  const TYPE_LABELS: Record<string, string> = {
+    purchase: "Sessões (pacote)",
+    product_sale: "Produtos",
+    reservation_payment: "Reservas",
+    credit_purchase: "Créditos",
+  };
+  const byType = Object.entries(
+    transactions.reduce<Record<string, number>>((acc, t) => {
+      acc[t.type] = (acc[t.type] ?? 0) + t.amount_cents;
+      return acc;
+    }, {})
+  ).sort((a, b) => b[1] - a[1]);
+
   const revenueNormal = transactions.filter((t) => !t.is_off_hours).reduce((a, t) => a + t.amount_cents, 0);
   const revenueOff = transactions.filter((t) => t.is_off_hours).reduce((a, t) => a + t.amount_cents, 0);
   const revenue = revenueNormal + revenueOff;
@@ -160,6 +173,21 @@ export function TransactionsPage() {
         <Stat label="Lucro líquido" value={formatCents(profit)} color={profit >= 0 ? "#34d399" : "#f87171"} />
         <Stat label="Transações" value={String(transactions.length)} color="#a78bfa" />
       </div>
+
+      {/* Revenue by category */}
+      {byType.length > 0 && (
+        <div className="rounded-lg p-4 mb-6" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Receita por categoria</p>
+          <div className="flex flex-col gap-2">
+            {byType.map(([type, cents]) => (
+              <div key={type} className="flex items-center justify-between text-sm">
+                <span className="text-slate-300">{TYPE_LABELS[type] ?? type}</span>
+                <span className="font-bold" style={{ color: "var(--amber)" }}>{formatCents(cents)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Partner split */}
       <div className="rounded-lg p-4 mb-6" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
