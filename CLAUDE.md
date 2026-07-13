@@ -14,6 +14,7 @@ Monorepo Bun workspaces + Turborepo: `apps/landing` (site), `apps/cliente` (PWA 
 - Desconto Founding Member (automático, `customer_discount_pct()`): 25% no primeiro pagamento (voucher, 60 dias do cadastro, marca `profiles.founding_discount_used`) e 10% vitalício depois — aplicado em pacotes, sessão aberta e reservas
 - Sessão aberta = `sessions.package_type IS NULL`, cobrada por tempo real via `close_open_session` (segmentos em `session_billing_segments`, timezone America/Sao_Paulo)
 - Avulso = `sessions.customer_id IS NULL`, paga ao encerrar
+- Sessões de pacote fixo pagas antecipadamente (`transaction_id` setado) ou cortesia (`is_courtesy`) fecham sozinhas via pg_cron `expire-finished-fixed-sessions` (a cada 5min, `expire_finished_fixed_sessions()`) quando `planned_end_at` passa — evita PC ficar "ocupado" pra sempre se ninguém clicar Encerrar. Avulso sem pagamento antecipado NÃO fecha sozinho (staff precisa cobrar em pessoa antes de liberar o PC).
 - Índice único: 1 sessão ativa por PC
 
 ## Reservas
