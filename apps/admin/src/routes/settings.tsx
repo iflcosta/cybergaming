@@ -27,7 +27,47 @@ export function SettingsPage() {
       <SplitSection />
       <HolidaysSection />
       <StationsSection />
+      <AgentPinSection />
     </div>
+  );
+}
+
+/* ---------- PIN de acesso staff no agente ---------- */
+function AgentPinSection() {
+  const [pin, setPin] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    if (pin.length < 4) { toast.error("PIN precisa ter ao menos 4 dígitos"); return; }
+    setSaving(true);
+    const { data, error } = await supabase.rpc("set_agent_staff_pin", { p_pin: pin });
+    setSaving(false);
+    if (error || !data?.ok) { toast.error("Erro ao salvar PIN"); return; }
+    toast.success("PIN atualizado");
+    setPin("");
+  }
+
+  return (
+    <Section title="PIN de acesso staff (agente)" subtitle="Usado no PC pra abrir sessão de cortesia sem cobrar, direto na tela de bloqueio">
+      <div className="flex gap-2 max-w-xs">
+        <input
+          value={pin}
+          onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
+          placeholder="Novo PIN"
+          inputMode="numeric"
+          className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
+          style={{ background: "var(--surface)", border: "1px solid var(--dim)", color: "white" }}
+        />
+        <button
+          onClick={save}
+          disabled={saving}
+          className="px-4 py-2 rounded-lg text-xs font-bold"
+          style={{ background: "var(--amber)", color: "#09090f" }}
+        >
+          Salvar
+        </button>
+      </div>
+    </Section>
   );
 }
 

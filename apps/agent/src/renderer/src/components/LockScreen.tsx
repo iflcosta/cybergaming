@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase, heartbeat, type HeartbeatSession } from "@/lib/supabase";
+import { SelfServicePanel } from "./SelfServicePanel";
 import type { AgentConfig } from "../../../main/store";
 
 const HEARTBEAT_MS = 30_000;
@@ -105,9 +106,7 @@ export function LockScreen({ config }: { config: AgentConfig }) {
           </div>
         )}
 
-        {!isActive && (
-          <p style={styles.instructions}>Procure o staff para iniciar sua sessão</p>
-        )}
+        {!isActive && <SelfServicePanel stationId={config.stationId} />}
 
         {!online && <p style={styles.offline}>⚠ Sem conexão — tentando reconectar…</p>}
       </div>

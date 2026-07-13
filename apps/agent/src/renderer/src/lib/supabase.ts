@@ -35,3 +35,47 @@ export async function heartbeat(stationId: string, agentSecret: string) {
   if (error) throw error;
   return data as { ok: true; session: HeartbeatSession | null } | { ok: false; error: string };
 }
+
+export interface AgentPackage {
+  code: string;
+  label: string;
+  price_cents: number;
+  duration_min: number;
+}
+
+export async function fetchPackages(): Promise<AgentPackage[]> {
+  const { data, error } = await supabase
+    .from("packages")
+    .select("code,label,price_cents,duration_min")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as AgentPackage[];
+}
+
+/** Signs in, starts the customer's own session, then immediately signs out —
+ * no session/token is ever persisted on the shared kiosk (persistSession: false). */
+export async function loginAndStartSession(email: string, password: string, stationId: string, packageType: string | null) {
+  const { error: authErr } = await supabase.auth.signInWithPassword({ email, password });
+  if (authErr) return { ok: false as const, error: authErr.message };
+
+  const { data, error } = await supabase.rpc("start_own_session", {
+    p_station_id: stationId,
+    p_package_type: packageType,
+  });
+
+  await supabase.auth.signOut();
+
+  if (error) return { ok: false as const, error: error.message };
+  return data as { ok: true; session_id: string; price_cents: number; planned_end_at: string | null } | { ok: false; error: string };
+}
+
+export async function startCourtesySession(stationId: string, pin: string, packageType: string | null) {
+  const { data, error } = await supabase.rpc("start_courtesy_session", {
+    p_station_id: stationId,
+    p_pin: pin,
+    p_package_type: packageType,
+  });
+  if (error) throw error;
+  return data as { ok: true; session_id: string; planned_end_at: string | null } | { ok: false; error: string };
+}
