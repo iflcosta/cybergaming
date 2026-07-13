@@ -19,6 +19,7 @@ export function CreditosPage() {
   const [history, setHistory] = useState<CreditTx[]>([]);
   const [amount, setAmount] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [payingOnline, setPayingOnline] = useState(false);
 
   async function load() {
     if (!user) return;
@@ -51,6 +52,30 @@ export function CreditosPage() {
     setSaving(false);
     if (error || !data?.ok) { toast.error("Erro ao solicitar créditos"); return; }
     toast.success("Pedido criado! Pague no caixa para liberar os créditos.");
+    setAmount(null);
+    load();
+  }
+
+  async function payOnline() {
+    if (!amount) return;
+    setPayingOnline(true);
+    const { data, error } = await supabase.functions.invoke("asaas-create-charge", {
+      body: { amount_cents: amount },
+    });
+    setPayingOnline(false);
+
+    if (error || !data?.ok) {
+      const msg = data?.error === "cpf_required"
+        ? "Precisamos do seu CPF pra gerar a cobrança — complete seu perfil"
+        : data?.error?.includes?.("não configurado")
+        ? "Pagamento online ainda não está disponível — peça pra pagar no caixa"
+        : "Erro ao gerar cobrança";
+      toast.error(msg);
+      return;
+    }
+
+    window.open(data.invoice_url, "_blank");
+    toast.success("Cobrança gerada! Finalize o pagamento na aba que abriu.");
     setAmount(null);
     load();
   }
@@ -90,13 +115,18 @@ export function CreditosPage() {
             </button>
           ))}
         </div>
-        <button onClick={request} disabled={!amount || saving}
+        <button onClick={payOnline} disabled={!amount || payingOnline || saving}
           className="w-full py-3 rounded-lg font-bold text-sm uppercase tracking-wider disabled:opacity-50"
           style={{ background: "var(--amber)", color: "#09090f" }}>
-          {saving ? "Solicitando…" : "Solicitar"}
+          {payingOnline ? "Gerando cobrança…" : "Pagar agora — PIX/Cartão"}
+        </button>
+        <button onClick={request} disabled={!amount || saving || payingOnline}
+          className="w-full py-2.5 rounded-lg font-semibold text-xs uppercase tracking-wider disabled:opacity-50"
+          style={{ background: "transparent", color: "var(--muted)", border: "1px solid var(--dim)" }}>
+          {saving ? "Solicitando…" : "Prefiro pagar no caixa"}
         </button>
         <p className="text-[10px] text-[--muted]">
-          Pague no caixa (PIX, cartão ou dinheiro) e seus créditos são liberados na hora
+          Pagamento online é liberado na hora. No caixa, aguarda confirmação do staff.
         </p>
       </div>
 
