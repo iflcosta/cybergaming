@@ -104,7 +104,7 @@ export function SessionsPage() {
                 <tr key={s.id} style={{ borderTop: "1px solid var(--dim)" }}>
                   <td className="px-4 py-3 font-bold text-white">{s.station?.label ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-300 text-xs">{s.customer?.full_name ?? s.customer?.email ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-400 text-xs">{PACKAGES[s.package_type]?.label}</td>
+                  <td className="px-4 py-3 text-slate-400 text-xs">{s.package_type ? PACKAGES[s.package_type]?.label : "Sessão Aberta"}</td>
                   <td className="px-4 py-3 text-slate-400 text-xs">{new Date(s.started_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</td>
                   <td className="px-4 py-3 text-xs" style={{ color: "var(--amber)" }}>
                     {s.planned_end_at ? new Date(s.planned_end_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—"}

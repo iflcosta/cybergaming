@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import {
   type PcStation, type Profile, type PackageType, type PaymentMethod,
-  PACKAGES, PAYMENT_METHOD_LABELS, formatCents,
+  PACKAGES, PAYMENT_METHOD_LABELS, formatCents, formatDuration,
 } from "@/lib/types";
 
 interface Props {
@@ -42,49 +42,55 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
   }
 
   async function confirm() {
-    if (!station || !pkg) return;
-    // Avulso: no payment now (pay at end), so method is optional for avulso
-    if (customer !== "avulso" && !method) return;
+    if (!station) return;
+    const isOpen = pkg === null;
+    const isAvulso = customer === "avulso";
+    // Open session: no payment now; fixed package non-avulso: needs method
+    if (!isOpen && !isAvulso && !method) return;
 
     setLoading(true);
-    const pkgInfo = PACKAGES[pkg];
     const now = new Date();
-    const plannedEnd = new Date(now.getTime() + pkgInfo.duration_min * 60_000);
-    const isAvulso = customer === "avulso";
     const customerId = isAvulso ? null : (customer as Profile)?.id ?? null;
-
     let transactionId: string | null = null;
+    let priceCents = 0;
+    let plannedEnd: Date | null = null;
 
-    // Only create transaction now if paying upfront (not avulso)
-    if (!isAvulso && customerId && method) {
-      const { data: tx, error: txErr } = await supabase
-        .from("transactions")
-        .insert({
-          customer_id: customerId,
-          amount_cents: pkgInfo.price_cents,
-          type: "purchase",
-          payment_method: method,
-          status: "paid",
-          description: `${pkgInfo.label} — ${station.label}`,
-        })
-        .select()
-        .single();
+    if (!isOpen) {
+      const pkgInfo = PACKAGES[pkg!];
+      priceCents  = pkgInfo.price_cents;
+      plannedEnd  = new Date(now.getTime() + pkgInfo.duration_min * 60_000);
 
-      if (txErr || !tx) {
-        toast.error("Erro ao registrar pagamento");
-        setLoading(false);
-        return;
+      // Create upfront transaction only for registered customers paying now
+      if (!isAvulso && customerId && method) {
+        const { data: tx, error: txErr } = await supabase
+          .from("transactions")
+          .insert({
+            customer_id: customerId,
+            amount_cents: priceCents,
+            type: "purchase",
+            payment_method: method,
+            status: "paid",
+            description: `${pkgInfo.label} — ${station.label}`,
+          })
+          .select()
+          .single();
+
+        if (txErr || !tx) {
+          toast.error("Erro ao registrar pagamento");
+          setLoading(false);
+          return;
+        }
+        transactionId = tx.id;
       }
-      transactionId = tx.id;
     }
 
     const { error: sessErr } = await supabase.from("sessions").insert({
       customer_id: customerId,
       station_id: station.id,
       package_type: pkg,
-      planned_end_at: plannedEnd.toISOString(),
+      planned_end_at: plannedEnd?.toISOString() ?? null,
       status: "active",
-      price_cents: pkgInfo.price_cents,
+      price_cents: priceCents,
       transaction_id: transactionId,
     });
 
@@ -100,8 +106,8 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
   }
 
   const stepIndex = STEPS.indexOf(step);
-  // For avulso, skip payment step (pay at end)
-  const effectiveSteps = customer === "avulso"
+  // Open session or avulso: skip payment (pay at end)
+  const effectiveSteps = (customer === "avulso" || pkg === null)
     ? STEPS.filter((s) => s !== "payment")
     : STEPS;
 
@@ -220,6 +226,25 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
                 {customer === "avulso" ? "Avulso" : (customer as Profile)?.full_name ?? (customer as Profile)?.email} — Pacote
               </p>
+              {/* Open session tile */}
+              <button
+                onClick={() => { setPkg(null); setStep("confirm"); }}
+                className="w-full p-4 rounded-lg text-left mb-3 transition-all hover:scale-[1.01]"
+                style={{ background: "rgba(251,191,36,0.06)", border: `1px solid ${pkg === null ? "var(--amber)" : "rgba(251,191,36,0.3)"}` }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-bold" style={{ color: "var(--amber)" }}>Sessão Aberta</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Cobra por tempo real · Hora Vale R$12/h · Hora Pico R$15/h</p>
+                  </div>
+                  <p className="text-xs text-slate-500">paga ao encerrar</p>
+                </div>
+              </button>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex-1 h-px" style={{ background: "var(--dim)" }} />
+                <span className="text-xs text-slate-600">ou pacote fixo</span>
+                <div className="flex-1 h-px" style={{ background: "var(--dim)" }} />
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 {(Object.entries(PACKAGES) as [PackageType, typeof PACKAGES[PackageType]][]).map(([key, p]) => (
                   <button
@@ -231,7 +256,7 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
                     <p className="text-xs text-slate-400 mb-1">{p.label}</p>
                     <p className="text-xl font-black text-white">{formatCents(p.price_cents)}</p>
                     <p className="text-[10px] text-slate-500 mt-1">{p.detail}</p>
-                    <p className="text-[10px] text-slate-600">{p.duration_min >= 60 ? `${p.duration_min / 60}h` : `${p.duration_min}min`}</p>
+                    <p className="text-[10px] text-slate-600">{formatDuration(p.duration_min)}</p>
                   </button>
                 ))}
               </div>
@@ -260,7 +285,7 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
           )}
 
           {/* Step: Confirm */}
-          {step === "confirm" && station && pkg && (
+          {step === "confirm" && station && (
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Confirmar sessão</p>
               <div className="rounded-lg p-4 mb-6 flex flex-col gap-3" style={{ background: "var(--bg)", border: "1px solid var(--dim)" }}>
@@ -269,18 +294,25 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
                   label="Cliente"
                   value={customer === "avulso" ? "Avulso" : (customer as Profile)?.full_name ?? (customer as Profile)?.email ?? "—"}
                 />
-                <Row label="Pacote" value={PACKAGES[pkg].label} />
-                <Row label="Duração" value={PACKAGES[pkg].duration_min >= 60 ? `${PACKAGES[pkg].duration_min / 60}h` : `${PACKAGES[pkg].duration_min}min`} />
+                <Row label="Pacote" value={pkg ? PACKAGES[pkg].label : "Sessão Aberta"} />
+                {pkg && <Row label="Duração" value={formatDuration(PACKAGES[pkg].duration_min)} />}
                 {customer !== "avulso" && method && (
                   <Row label="Pagamento" value={PAYMENT_METHOD_LABELS[method]} />
                 )}
                 <div className="border-t pt-3 flex items-center justify-between" style={{ borderColor: "var(--dim)" }}>
                   <span className="text-xs text-slate-400 uppercase tracking-wider">Total</span>
                   <div className="text-right">
-                    <span className="text-xl font-black" style={{ color: "var(--amber)" }}>
-                      {formatCents(PACKAGES[pkg].price_cents)}
-                    </span>
-                    {customer === "avulso" && (
+                    {pkg ? (
+                      <span className="text-xl font-black" style={{ color: "var(--amber)" }}>
+                        {formatCents(PACKAGES[pkg].price_cents)}
+                      </span>
+                    ) : (
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: "var(--amber)" }}>por tempo usado</p>
+                        <p className="text-[10px] text-slate-500">R$12/h vale · R$15/h pico</p>
+                      </div>
+                    )}
+                    {(customer === "avulso" || pkg === null) && pkg && (
                       <p className="text-[10px] text-slate-500">cobrar ao encerrar</p>
                     )}
                   </div>

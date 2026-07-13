@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { PAYMENT_METHOD_LABELS, PACKAGES, formatCents, type Session, type PaymentMethod } from "@/lib/types";
+import {
+  PAYMENT_METHOD_LABELS, PACKAGES, formatCents, formatDuration,
+  computeOpenBillingPreview,
+  type Session, type PaymentMethod,
+} from "@/lib/types";
 
 interface Props {
   session: Session;
@@ -13,20 +17,55 @@ interface Props {
 export function EndSessionModal({ session, onClose, onSuccess }: Props) {
   const [method, setMethod] = useState<PaymentMethod | null>(null);
   const [loading, setLoading] = useState(false);
-  const isAvulso = !session.customer_id;
+  const [now, setNow] = useState(new Date());
+
+  const isOpen    = session.package_type === null;
+  const isAvulso  = !session.customer_id;
+  const needsMethod = isOpen || isAvulso;
+
+  // Tick every 10 s for live preview
+  useEffect(() => {
+    if (!isOpen) return;
+    const t = setInterval(() => setNow(new Date()), 10_000);
+    return () => clearInterval(t);
+  }, [isOpen]);
+
+  const preview = isOpen
+    ? computeOpenBillingPreview(new Date(session.started_at), now)
+    : null;
+
+  const displayCents = isOpen ? (preview?.totalCents ?? 0) : session.price_cents;
+  const elapsed = Math.round((now.getTime() - new Date(session.started_at).getTime()) / 60_000);
 
   async function handleEnd() {
-    if (isAvulso && !method) return;
+    if (needsMethod && !method) return;
     setLoading(true);
 
+    if (isOpen) {
+      const { data, error } = await supabase.rpc("close_open_session", {
+        p_session_id:     session.id,
+        p_payment_method: method,
+        p_ended_at:       new Date().toISOString(),
+      });
+      if (error || !data?.ok) {
+        toast.error("Erro ao encerrar sessão");
+        setLoading(false);
+        return;
+      }
+      toast.success(`Sessão encerrada — ${session.station?.label ?? "PC"} · ${formatCents(data.total_cents)}`);
+      onSuccess();
+      return;
+    }
+
+    // Fixed package — avulso: create transaction first
     if (isAvulso && method) {
       const { error: txErr } = await supabase.from("transactions").insert({
-        customer_id: null,
-        amount_cents: session.price_cents,
-        type: "purchase",
+        customer_id:    null,
+        amount_cents:   session.price_cents,
+        type:           "purchase",
         payment_method: method,
-        status: "paid",
-        description: `${PACKAGES[session.package_type]?.label ?? session.package_type} — ${session.station?.label ?? "PC"} (avulso)`,
+        status:         "paid",
+        description:    `${PACKAGES[session.package_type!]?.label ?? session.package_type} — ${session.station?.label ?? "PC"} (avulso)`,
       });
       if (txErr) {
         toast.error("Erro ao registrar pagamento");
@@ -50,8 +89,6 @@ export function EndSessionModal({ session, onClose, onSuccess }: Props) {
     onSuccess();
   }
 
-  const elapsed = Math.round((Date.now() - new Date(session.started_at).getTime()) / 60_000);
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.75)" }}>
       <div className="w-full max-w-sm rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
@@ -62,17 +99,35 @@ export function EndSessionModal({ session, onClose, onSuccess }: Props) {
 
         <div className="p-5">
           <div className="rounded-lg p-4 mb-5 flex flex-col gap-2.5" style={{ background: "var(--bg)", border: "1px solid var(--dim)" }}>
-            <Row label="PC" value={session.station?.label ?? "—"} />
+            <Row label="PC"      value={session.station?.label ?? "—"} />
             <Row label="Cliente" value={session.customer?.full_name ?? session.customer?.email ?? "Avulso"} />
-            <Row label="Pacote" value={PACKAGES[session.package_type]?.label ?? session.package_type} />
+            <Row label="Pacote"  value={isOpen ? "Sessão Aberta" : (PACKAGES[session.package_type!]?.label ?? "—")} />
             <Row label="Duração" value={`${elapsed}min`} />
+
+            {/* Open session: live billing breakdown */}
+            {isOpen && preview && preview.segments.length > 0 && (
+              <div className="flex flex-col gap-1 pt-1">
+                {preview.segments.map((seg, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="text-[11px] text-slate-500">
+                      {seg.rate_type === "hora_vale" ? "Hora Vale" : "Hora Pico"} · {formatDuration(seg.minutes)}
+                    </span>
+                    <span className="text-[11px] text-slate-400">{formatCents(seg.amount_cents)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="border-t pt-2.5 flex items-center justify-between" style={{ borderColor: "var(--dim)" }}>
               <span className="text-xs text-slate-400">Total</span>
-              <span className="text-xl font-black" style={{ color: "var(--amber)" }}>{formatCents(session.price_cents)}</span>
+              <div className="text-right">
+                <span className="text-xl font-black" style={{ color: "var(--amber)" }}>{formatCents(displayCents)}</span>
+                {isOpen && <p className="text-[10px] text-slate-600">atualizado a cada 10s</p>}
+              </div>
             </div>
           </div>
 
-          {isAvulso ? (
+          {needsMethod && (
             <>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Forma de pagamento</p>
               <div className="flex flex-col gap-2 mb-5">
@@ -98,7 +153,9 @@ export function EndSessionModal({ session, onClose, onSuccess }: Props) {
                 {loading ? "Encerrando…" : "Confirmar Pagamento e Encerrar"}
               </button>
             </>
-          ) : (
+          )}
+
+          {!needsMethod && (
             <button
               onClick={handleEnd}
               disabled={loading}

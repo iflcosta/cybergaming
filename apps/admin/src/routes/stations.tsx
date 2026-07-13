@@ -81,7 +81,7 @@ export function StationsPage() {
                 <>
                   <div className="flex flex-col gap-1">
                     <p className="text-sm font-semibold text-white">{session.customer?.full_name ?? session.customer?.email ?? "—"}</p>
-                    <p className="text-xs text-slate-500">{session.package_type.replace("_", " ").toUpperCase()}</p>
+                    <p className="text-xs text-slate-500">{session.package_type ? session.package_type.replace("_", " ").toUpperCase() : "SESSÃO ABERTA"}</p>
                     <p className="text-xs text-slate-500">
                       Início: {new Date(session.started_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </p>
