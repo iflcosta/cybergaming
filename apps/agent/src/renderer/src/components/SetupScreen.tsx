@@ -27,8 +27,9 @@ export function SetupScreen({ onPaired }: { onPaired: (config: AgentConfig) => v
       };
       await window.agent.setConfig(config);
       onPaired(config);
-    } catch {
-      setError("Erro de conexão — verifique a internet");
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      setError(`Erro de conexão: ${detail}`);
       setLoading(false);
     }
   }

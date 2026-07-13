@@ -30,6 +30,13 @@ function createWindow() {
   win.setAlwaysOnTop(true, "screen-saver");
   win.setMenuBarVisibility(false);
 
+  // Maintenance shortcut: Ctrl+Shift+I opens DevTools for on-site debugging.
+  win.webContents.on("before-input-event", (_e, input) => {
+    if (input.control && input.shift && input.key.toLowerCase() === "i") {
+      win?.webContents.toggleDevTools();
+    }
+  });
+
   // Only a deliberate quit from the renderer (staff-code gated) is allowed to close the window;
   // anything else (Alt+F4, taskbar — though it's hidden) just re-locks instead.
   win.on("close", (e) => {
