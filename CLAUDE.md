@@ -32,7 +32,7 @@ Monorepo Bun workspaces + Turborepo: `apps/landing` (site), `apps/cliente` (PWA 
 - Edge functions `asaas-create-charge` (verify_jwt true, chamada pelo cliente autenticado) e `asaas-webhook` (verify_jwt false, autenticada por token compartilhado na query string `?token=`, guardado em `ASAAS_WEBHOOK_TOKEN` no vault).
 - `asaas-create-charge`: garante `profiles.asaas_customer_id` (cria cliente no Asaas se faltar, exige CPF), cria cobrança `billingType: UNDEFINED` (cliente escolhe PIX/cartão/boleto na página hospedada do Asaas via `invoiceUrl`), grava transação `pending` via RPC `create_asaas_transaction`.
 - Webhook: eventos `PAYMENT_RECEIVED`/`PAYMENT_CONFIRMED` chamam `confirm_asaas_payment(payment_id)` (idempotente, credita `profiles.credits_balance` e marca a transação `paid`) — 100% automático, sem staff.
-- Configurar na Asaas (dashboard): URL do webhook = `https://scrswxgvlwfndsqrclgb.supabase.co/functions/v1/asaas-webhook?token=<ASAAS_WEBHOOK_TOKEN do vault>`, eventos `PAYMENT_RECEIVED` e `PAYMENT_CONFIRMED`.
+- Configurar na Asaas (dashboard → Webhooks): URL = `https://scrswxgvlwfndsqrclgb.supabase.co/functions/v1/asaas-webhook` (sem query string — o Asaas manda o token no header `asaas-access-token`, precisa bater com `ASAAS_WEBHOOK_TOKEN` no vault), eventos `PAYMENT_RECEIVED` e `PAYMENT_CONFIRMED`.
 - Fluxo de créditos no app cliente: "Pagar agora — PIX/Cartão" (Asaas, automático) como opção principal; "Prefiro pagar no caixa" (`request_credit_purchase`, staff confirma) como alternativa.
 
 ## Decisões de arquitetura
