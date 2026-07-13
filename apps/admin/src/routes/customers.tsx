@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { formatCents, type Profile } from "@/lib/types";
@@ -21,9 +21,12 @@ export function CustomersPage() {
 
   useEffect(() => { load(); }, []);
 
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
   function onSearch(v: string) {
     setSearch(v);
-    load(v);
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => load(v), 300);
   }
 
   return (

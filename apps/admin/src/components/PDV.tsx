@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { X, Search, Check, UserX } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -28,17 +28,22 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
   const [searching, setSearching] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  async function searchCustomers(q: string) {
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  function searchCustomers(q: string) {
     setSearch(q);
+    clearTimeout(searchTimer.current);
     if (q.length < 2) { setSearchResults([]); return; }
     setSearching(true);
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .or(`full_name.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%`)
-      .limit(8);
-    setSearchResults(data ?? []);
-    setSearching(false);
+    searchTimer.current = setTimeout(async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .or(`full_name.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%`)
+        .limit(8);
+      setSearchResults(data ?? []);
+      setSearching(false);
+    }, 300);
   }
 
   async function confirm() {
@@ -59,6 +64,16 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
       const pkgInfo = PACKAGES[pkg!];
       priceCents  = pkgInfo.price_cents;
       plannedEnd  = new Date(now.getTime() + pkgInfo.duration_min * 60_000);
+
+      // Corujão ends at 06:00 BRT, regardless of start time
+      if (pkg === "corujao") {
+        const local = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+        const offsetMs = now.getTime() - local.getTime();
+        const localEnd = new Date(local);
+        if (local.getHours() >= 6) localEnd.setDate(localEnd.getDate() + 1);
+        localEnd.setHours(6, 0, 0, 0);
+        plannedEnd = new Date(localEnd.getTime() + offsetMs);
+      }
 
       // Create upfront transaction only for registered customers paying now
       if (!isAvulso && customerId && method) {

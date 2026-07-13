@@ -21,7 +21,13 @@ export function TransactionsPage() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const ch = supabase.channel("transactions-page")
+      .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, load)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   if (loading) return <div className="text-slate-500 text-sm">Carregando…</div>;
 
