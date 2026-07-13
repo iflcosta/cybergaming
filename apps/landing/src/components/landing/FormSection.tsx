@@ -121,6 +121,7 @@ export function FormSection() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [checked, setChecked] = useState(false);
   const [jogo, setJogo] = useState("");
+  const [jogoOutro, setJogoOutro] = useState("");
   const [estilo, setEstilo] = useState<"solo" | "equipe-fixa" | "procurando" | "">("");
   const [interesse, setInteresse] = useState<"competir" | "assistir" | "ambos" | "">("");
   const utm = useUtmParams();
@@ -154,7 +155,7 @@ export function FormSection() {
         nome,
         whatsapp,
         email,
-        jogo_principal: jogo,
+        jogo_principal: jogo === "Outro" ? jogoOutro || "Outro" : jogo,
         estilo_jogo: estilo,
         interesse_campeonatos: interesse,
         ...utm,
@@ -273,6 +274,16 @@ export function FormSection() {
                     ))}
                   </select>
                   {errors.jogo && <p className="ml-1 text-xs text-destructive">{errors.jogo}</p>}
+                  {jogo === "Outro" && (
+                    <input
+                      type="text"
+                      value={jogoOutro}
+                      onChange={(e) => setJogoOutro(e.target.value)}
+                      placeholder="Qual jogo você joga?"
+                      autoFocus
+                      className="w-full border border-white/8 bg-bg-secondary px-5 py-4 text-base text-text-primary placeholder:text-text-tertiary focus:border-accent-primary/60 focus:outline-none transition-colors"
+                    />
+                  )}
                 </div>
 
                 <RadioGroup
