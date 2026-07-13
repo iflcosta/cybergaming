@@ -7,6 +7,7 @@ import {
   computeOpenBillingPreview,
   type Session, type PaymentMethod,
 } from "@/lib/types";
+import { usePackages } from "@/lib/packages";
 
 interface Props {
   session: Session;
@@ -30,8 +31,12 @@ export function EndSessionModal({ session, onClose, onSuccess }: Props) {
     return () => clearInterval(t);
   }, [isOpen]);
 
+  const packages = usePackages();
   const preview = isOpen
-    ? computeOpenBillingPreview(new Date(session.started_at), now)
+    ? computeOpenBillingPreview(new Date(session.started_at), now, {
+        vale_cents: packages.hora_vale.price_cents,
+        pico_cents: packages.hora_pico.price_cents,
+      })
     : null;
 
   const displayCents = isOpen ? (preview?.totalCents ?? 0) : session.price_cents;

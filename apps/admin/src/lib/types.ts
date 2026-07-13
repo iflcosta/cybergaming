@@ -59,6 +59,7 @@ export interface BillingSegment {
 export function computeOpenBillingPreview(
   startedAt: Date,
   endAt: Date = new Date(),
+  rates: { vale_cents: number; pico_cents: number } = { vale_cents: 1200, pico_cents: 1500 },
 ): { segments: BillingSegment[]; totalCents: number } {
   const TZ = "America/Sao_Paulo";
   const segments: BillingSegment[] = [];
@@ -76,7 +77,7 @@ export function computeOpenBillingPreview(
 
     if (dow >= 1 && dow <= 5 && hour < 18) {
       rateType  = "hora_vale";
-      rateCents = 1200;
+      rateCents = rates.vale_cents;
       // Next boundary: 18:00 same day BRT
       const b = new Date(cursor.toLocaleString("en-US", { timeZone: TZ }));
       b.setHours(18, 0, 0, 0);
@@ -88,7 +89,7 @@ export function computeOpenBillingPreview(
       boundary = new Date(localBoundary.getTime() + offsetMs);
     } else {
       rateType  = "hora_pico";
-      rateCents = 1500;
+      rateCents = rates.pico_cents;
       // Next boundary: midnight next day BRT
       const offsetMs = cursor.getTime() - localDate.getTime();
       const localBoundary = new Date(localDate);
@@ -130,10 +131,10 @@ export interface Transaction {
   customer?: Profile;
 }
 
-export const PACKAGES: Record<PackageType, { label: string; price_cents: number; duration_min: number; detail: string }> = {
+export const PACKAGES: Record<PackageType, { label: string; price_cents: number; duration_min: number; detail: string; founding_price_cents?: number }> = {
   hora_vale:  { label: "Hora Vale",  price_cents: 1200, duration_min: 60,  detail: "Seg–Sex até 18h" },
   hora_pico:  { label: "Hora Pico",  price_cents: 1500, duration_min: 60,  detail: "Pico e fins de semana" },
-  pacote_3h:  { label: "Pacote 3h",  price_cents: 3900, duration_min: 180, detail: "R$13/h — Popular ⭐" },
+  pacote_3h:  { label: "Pacote 3h",  price_cents: 4990, duration_min: 180, detail: "Popular ⭐", founding_price_cents: 3900 },
   corujao:    { label: "Corujão",    price_cents: 7990, duration_min: 480, detail: "Sex/Sáb · 22h–06h" },
 };
 

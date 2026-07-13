@@ -4,8 +4,9 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import {
   type PcStation, type Profile, type PackageType, type PaymentMethod,
-  PACKAGES, PAYMENT_METHOD_LABELS, formatCents, formatDuration,
+  PAYMENT_METHOD_LABELS, formatCents, formatDuration,
 } from "@/lib/types";
+import { usePackages, type PackageInfo } from "@/lib/packages";
 
 interface Props {
   stations: PcStation[];
@@ -29,6 +30,15 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
   const [loading, setLoading] = useState(false);
 
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const packages = usePackages();
+
+  const isFounding = customer !== "avulso" && !!(customer as Profile | null)?.is_founding_member;
+
+  /** Price the selected customer actually pays for a package. */
+  function effectivePrice(key: PackageType): number {
+    const p = packages[key];
+    return isFounding && p.founding_price_cents ? p.founding_price_cents : p.price_cents;
+  }
 
   function searchCustomers(q: string) {
     setSearch(q);
@@ -61,8 +71,8 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
     let plannedEnd: Date | null = null;
 
     if (!isOpen) {
-      const pkgInfo = PACKAGES[pkg!];
-      priceCents  = pkgInfo.price_cents;
+      const pkgInfo = packages[pkg!];
+      priceCents  = effectivePrice(pkg!);
       plannedEnd  = new Date(now.getTime() + pkgInfo.duration_min * 60_000);
 
       // Corujão ends at 06:00 BRT, regardless of start time
@@ -250,7 +260,9 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-bold" style={{ color: "var(--amber)" }}>Sessão Aberta</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Cobra por tempo real · Hora Vale R$12/h · Hora Pico R$15/h</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Cobra por tempo real · Hora Vale {formatCents(packages.hora_vale.price_cents)}/h · Hora Pico {formatCents(packages.hora_pico.price_cents)}/h
+                    </p>
                   </div>
                   <p className="text-xs text-slate-500">paga ao encerrar</p>
                 </div>
@@ -261,19 +273,30 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
                 <div className="flex-1 h-px" style={{ background: "var(--dim)" }} />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {(Object.entries(PACKAGES) as [PackageType, typeof PACKAGES[PackageType]][]).map(([key, p]) => (
-                  <button
-                    key={key}
-                    onClick={() => { setPkg(key); setStep(customer === "avulso" ? "confirm" : "payment"); }}
-                    className="p-4 rounded-lg text-left transition-all hover:scale-[1.02]"
-                    style={{ background: "var(--bg)", border: `1px solid ${pkg === key ? "var(--amber)" : "var(--dim)"}` }}
-                  >
-                    <p className="text-xs text-slate-400 mb-1">{p.label}</p>
-                    <p className="text-xl font-black text-white">{formatCents(p.price_cents)}</p>
-                    <p className="text-[10px] text-slate-500 mt-1">{p.detail}</p>
-                    <p className="text-[10px] text-slate-600">{formatDuration(p.duration_min)}</p>
-                  </button>
-                ))}
+                {(Object.entries(packages) as [PackageType, PackageInfo][]).map(([key, p]) => {
+                  const discounted = isFounding && p.founding_price_cents;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => { setPkg(key); setStep(customer === "avulso" ? "confirm" : "payment"); }}
+                      className="p-4 rounded-lg text-left transition-all hover:scale-[1.02]"
+                      style={{ background: "var(--bg)", border: `1px solid ${pkg === key ? "var(--amber)" : "var(--dim)"}` }}
+                    >
+                      <p className="text-xs text-slate-400 mb-1">{p.label}</p>
+                      {discounted ? (
+                        <>
+                          <p className="text-xl font-black" style={{ color: "var(--amber)" }}>{formatCents(p.founding_price_cents!)}</p>
+                          <p className="text-[10px] text-slate-500 line-through">{formatCents(p.price_cents)}</p>
+                          <p className="text-[10px] font-bold" style={{ color: "var(--amber)" }}>★ Founding Member</p>
+                        </>
+                      ) : (
+                        <p className="text-xl font-black text-white">{formatCents(p.price_cents)}</p>
+                      )}
+                      <p className="text-[10px] text-slate-500 mt-1">{p.detail}</p>
+                      <p className="text-[10px] text-slate-600">{formatDuration(p.duration_min)}</p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -282,7 +305,7 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
           {step === "payment" && (
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
-                {pkg && PACKAGES[pkg].label} — Pagamento
+                {pkg && packages[pkg].label} — Pagamento
               </p>
               <div className="flex flex-col gap-2">
                 {(Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(([key, label]) => (
@@ -309,8 +332,8 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
                   label="Cliente"
                   value={customer === "avulso" ? "Avulso" : (customer as Profile)?.full_name ?? (customer as Profile)?.email ?? "—"}
                 />
-                <Row label="Pacote" value={pkg ? PACKAGES[pkg].label : "Sessão Aberta"} />
-                {pkg && <Row label="Duração" value={formatDuration(PACKAGES[pkg].duration_min)} />}
+                <Row label="Pacote" value={pkg ? packages[pkg].label : "Sessão Aberta"} />
+                {pkg && <Row label="Duração" value={formatDuration(packages[pkg].duration_min)} />}
                 {customer !== "avulso" && method && (
                   <Row label="Pagamento" value={PAYMENT_METHOD_LABELS[method]} />
                 )}
@@ -318,13 +341,20 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
                   <span className="text-xs text-slate-400 uppercase tracking-wider">Total</span>
                   <div className="text-right">
                     {pkg ? (
-                      <span className="text-xl font-black" style={{ color: "var(--amber)" }}>
-                        {formatCents(PACKAGES[pkg].price_cents)}
-                      </span>
+                      <>
+                        <span className="text-xl font-black" style={{ color: "var(--amber)" }}>
+                          {formatCents(effectivePrice(pkg))}
+                        </span>
+                        {isFounding && packages[pkg].founding_price_cents && (
+                          <p className="text-[10px] font-bold" style={{ color: "var(--amber)" }}>★ desconto Founding</p>
+                        )}
+                      </>
                     ) : (
                       <div>
                         <p className="text-sm font-bold" style={{ color: "var(--amber)" }}>por tempo usado</p>
-                        <p className="text-[10px] text-slate-500">R$12/h vale · R$15/h pico</p>
+                        <p className="text-[10px] text-slate-500">
+                          {formatCents(packages.hora_vale.price_cents)}/h vale · {formatCents(packages.hora_pico.price_cents)}/h pico
+                        </p>
                       </div>
                     )}
                     {(customer === "avulso" || pkg === null) && pkg && (
