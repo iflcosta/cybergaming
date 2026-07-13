@@ -31,6 +31,7 @@ export interface PcStation {
     peripherals?: { keyboard?: string; mouse?: string; headset?: string };
   } | null;
   created_at: string;
+  last_seen_at?: string | null;
 }
 
 export interface Session {

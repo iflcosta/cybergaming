@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Wifi, WifiOff, KeyRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { formatCents, type PcStation } from "@/lib/types";
@@ -202,15 +202,27 @@ function HolidaysSection() {
   );
 }
 
+const ONLINE_THRESHOLD_MS = 90_000; // agent heartbeats every ~30s
+
+function isOnline(s: PcStation) {
+  if (!s.last_seen_at) return false;
+  return Date.now() - new Date(s.last_seen_at).getTime() < ONLINE_THRESHOLD_MS;
+}
+
 /* ---------- PCs ---------- */
 function StationsSection() {
   const [stations, setStations] = useState<PcStation[]>([]);
+  const [pairingStation, setPairingStation] = useState<PcStation | null>(null);
 
   async function load() {
     const { data } = await supabase.from("pc_stations").select("*").order("station_number");
     setStations(data ?? []);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 30_000);
+    return () => clearInterval(t);
+  }, []);
 
   async function toggle(s: PcStation) {
     const { error } = await supabase.from("pc_stations").update({ is_active: !s.is_active }).eq("id", s.id);
@@ -220,27 +232,94 @@ function StationsSection() {
   }
 
   return (
-    <Section title="PCs" subtitle="Desative um PC em manutenção para ele sair do PDV">
+    <Section title="PCs" subtitle="Desative um PC em manutenção para ele sair do PDV. Use a chave para parear o agente de máquina.">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-        {stations.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => toggle(s)}
-            className="px-3 py-2.5 rounded-lg text-sm font-bold transition-colors"
-            style={{
-              background: s.is_active ? "var(--surface)" : "rgba(239,68,68,0.08)",
-              border: `1px solid ${s.is_active ? "var(--dim)" : "rgba(239,68,68,0.35)"}`,
-              color: s.is_active ? "#34d399" : "#f87171",
-            }}
-          >
-            {s.label ?? `PC-${s.station_number}`}
-            <span className="block text-[9px] font-normal mt-0.5" style={{ color: "var(--muted)" }}>
-              {s.is_active ? "ativo" : "manutenção"}
-            </span>
-          </button>
-        ))}
+        {stations.map((s) => {
+          const online = isOnline(s);
+          return (
+            <div
+              key={s.id}
+              className="relative px-3 py-2.5 rounded-lg text-sm font-bold transition-colors"
+              style={{
+                background: s.is_active ? "var(--surface)" : "rgba(239,68,68,0.08)",
+                border: `1px solid ${s.is_active ? "var(--dim)" : "rgba(239,68,68,0.35)"}`,
+                color: s.is_active ? "#34d399" : "#f87171",
+              }}
+            >
+              <button onClick={() => toggle(s)} className="block w-full text-left">
+                {s.label ?? `PC-${s.station_number}`}
+                <span className="flex items-center gap-1 text-[9px] font-normal mt-0.5" style={{ color: "var(--muted)" }}>
+                  {s.is_active ? "ativo" : "manutenção"}
+                  {online ? <Wifi size={10} className="text-emerald-400" /> : <WifiOff size={10} className="text-slate-600" />}
+                </span>
+              </button>
+              <button
+                onClick={() => setPairingStation(s)}
+                title="Parear agente de máquina"
+                className="absolute top-1.5 right-1.5 p-1 rounded hover:bg-white/10"
+                style={{ color: "var(--muted)" }}
+              >
+                <KeyRound size={12} />
+              </button>
+            </div>
+          );
+        })}
       </div>
+      {pairingStation && (
+        <PairingModal station={pairingStation} onClose={() => setPairingStation(null)} />
+      )}
     </Section>
+  );
+}
+
+function PairingModal({ station, onClose }: { station: PcStation; onClose: () => void }) {
+  const [code, setCode] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function generate() {
+    setLoading(true);
+    const { data, error } = await supabase.rpc("generate_pairing_code", { p_station_id: station.id });
+    setLoading(false);
+    if (error || !data?.ok) {
+      toast.error("Erro ao gerar código");
+      return;
+    }
+    setCode(data.code);
+    setExpiresAt(data.expires_at);
+  }
+
+  useEffect(() => { generate(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.75)" }}>
+      <div className="w-full max-w-xs rounded-xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-white">Parear {station.label ?? `PC-${station.station_number}`}</h3>
+          <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={16} /></button>
+        </div>
+        {loading && <p className="text-xs text-slate-500">Gerando código…</p>}
+        {code && (
+          <>
+            <p className="text-3xl font-black tracking-[0.3em] text-center py-4" style={{ color: "var(--amber)" }}>
+              {code}
+            </p>
+            <p className="text-[11px] text-slate-500 text-center mb-3">
+              Digite este código no agente instalado neste PC. Válido até{" "}
+              {expiresAt ? new Date(expiresAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—"}.
+            </p>
+          </>
+        )}
+        <button
+          onClick={generate}
+          disabled={loading}
+          className="w-full py-2 rounded-lg text-xs font-bold"
+          style={{ background: "var(--dim)", color: "white" }}
+        >
+          Gerar novo código
+        </button>
+      </div>
+    </div>
   );
 }
 
