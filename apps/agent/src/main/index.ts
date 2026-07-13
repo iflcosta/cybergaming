@@ -27,7 +27,10 @@ function createWindow() {
     },
   });
 
-  win.setAlwaysOnTop(true, "screen-saver");
+  // "screen-saver" level can cover the Task Manager and even the secure
+  // Ctrl+Alt+Del desktop, trapping staff on-site. "pop-up-menu" stays above
+  // normal app windows without going that far.
+  win.setAlwaysOnTop(true, "pop-up-menu");
   win.setMenuBarVisibility(false);
 
   // Maintenance shortcut: Ctrl+Shift+I opens DevTools for on-site debugging.
@@ -57,7 +60,7 @@ function applyLockState(shouldLock: boolean) {
   locked = shouldLock;
   if (!win) return;
   if (shouldLock) {
-    win.setAlwaysOnTop(true, "screen-saver");
+    win.setAlwaysOnTop(true, "pop-up-menu");
     win.setFullScreen(true);
     win.show();
     win.focus();
