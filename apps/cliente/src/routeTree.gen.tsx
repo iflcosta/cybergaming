@@ -7,6 +7,7 @@ import { OnboardingPage } from "./routes/onboarding";
 import { HomePage } from "./routes/home";
 import { ReservasPage } from "./routes/reservas";
 import { CreditosPage } from "./routes/creditos";
+import { DisponibilidadePage } from "./routes/disponibilidade";
 import { RequireAuth } from "./components/RequireAuth";
 
 const rootRoute = createRootRoute({ component: RootLayout });
@@ -34,6 +35,11 @@ const creditosRoute = createRoute({
   path: "/creditos",
   component: () => <RequireAuth><CreditosPage /></RequireAuth>,
 });
+const disponibilidadeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/disponibilidade",
+  component: () => <RequireAuth><DisponibilidadePage /></RequireAuth>,
+});
 
 export const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -43,4 +49,5 @@ export const routeTree = rootRoute.addChildren([
   homeRoute,
   reservasRoute,
   creditosRoute,
+  disponibilidadeRoute,
 ]);
