@@ -1,0 +1,4 @@
+{
+  "buildCommand": "cd apps/landing && bun run build",
+  "installCommand": "bun install"
+}
