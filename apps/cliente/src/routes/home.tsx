@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/contexts/auth";
 import { supabase } from "@/lib/supabase";
 import { computeOpenBillingPreview, formatCents } from "@/lib/billing";
@@ -151,7 +152,8 @@ export function HomePage() {
         )}
 
         {/* Credits */}
-        <div
+        <Link
+          to="/creditos"
           className="rounded-xl p-4 flex items-center justify-between"
           style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}
         >
@@ -161,15 +163,31 @@ export function HomePage() {
               {formatCents(profile?.credits_balance ?? 0)}
             </p>
           </div>
-          {profile?.is_founding_member && (
-            <span
-              className="text-[10px] font-bold px-2 py-1 rounded"
-              style={{ background: "rgba(251,191,36,0.15)", color: "var(--amber)" }}
-            >
-              ★ FOUNDING
-            </span>
-          )}
-        </div>
+          <div className="flex items-center gap-2">
+            {profile?.is_founding_member && (
+              <span
+                className="text-[10px] font-bold px-2 py-1 rounded"
+                style={{ background: "rgba(251,191,36,0.15)", color: "var(--amber)" }}
+              >
+                ★ FOUNDING
+              </span>
+            )}
+            <span className="text-xs font-bold" style={{ color: "var(--amber)" }}>+ Adicionar</span>
+          </div>
+        </Link>
+
+        {/* Reservations shortcut */}
+        <Link
+          to="/reservas"
+          className="rounded-xl p-4 flex items-center justify-between"
+          style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}
+        >
+          <div>
+            <p className="text-sm font-bold text-[--text]">📅 Reservar um PC</p>
+            <p className="text-xs text-[--muted] mt-0.5">Garanta seu horário antes de chegar</p>
+          </div>
+          <span className="text-[--muted]">→</span>
+        </Link>
 
         {/* Pricing */}
         <div>
@@ -206,16 +224,6 @@ export function HomePage() {
           </div>
         </div>
 
-        {/* Coming soon */}
-        <div
-          className="rounded-xl p-5 text-center"
-          style={{ background: "var(--surface)", border: "1px dashed var(--dim)" }}
-        >
-          <p className="text-sm font-bold text-[--muted]">Reservas em breve</p>
-          <p className="text-xs text-[--muted] mt-1">
-            Reserve seu PC pelo app assim que abrirmos
-          </p>
-        </div>
       </main>
     </div>
   );

@@ -14,6 +14,11 @@ Monorepo Bun workspaces + Turborepo: `apps/landing` (site), `apps/cliente` (PWA 
 - Avulso = `sessions.customer_id IS NULL`, paga ao encerrar
 - Índice único: 1 sessão ativa por PC
 
+## Sociedade
+- Sócio investidor arca com custos; operador (Iago) opera 100%. Lucro líquido 50/50 em horário normal.
+- Fora de funcionamento → 60/40 p/ operador: segunda-feira (fechado), antes das 10h, após as 22h (ter–dom), corujão inteiro (coberto pela regra 22h–06h) e feriados (tabela `holidays`).
+- `transactions.is_off_hours` é marcado por trigger no insert (BRT); percentuais em `app_settings`.
+
 ## Decisões de arquitetura
 - **Controle das máquinas (Rota 1, decidido)**: agente próprio nos PCs Windows (Electron ou .NET) — tela de bloqueio fullscreen, assina Supabase Realtime em `sessions` filtrado por `station_id` (active → libera, completed → bloqueia), heartbeat ~30s em `pc_stations.last_seen_at`, widget de tempo restante. NÃO usar software de terceiros (ggLeap etc.).
 - Segredos (Resend, service role) SÓ no vault do Supabase, nunca no código. `get_secret` é restrito a service_role.

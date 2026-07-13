@@ -5,6 +5,8 @@ import { LoginPage } from "./routes/auth/login";
 import { CadastroPage } from "./routes/auth/cadastro";
 import { OnboardingPage } from "./routes/onboarding";
 import { HomePage } from "./routes/home";
+import { ReservasPage } from "./routes/reservas";
+import { CreditosPage } from "./routes/creditos";
 import { RequireAuth } from "./components/RequireAuth";
 
 const rootRoute = createRootRoute({ component: RootLayout });
@@ -22,6 +24,16 @@ const homeRoute = createRoute({
   path: "/home",
   component: () => <RequireAuth><HomePage /></RequireAuth>,
 });
+const reservasRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/reservas",
+  component: () => <RequireAuth><ReservasPage /></RequireAuth>,
+});
+const creditosRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/creditos",
+  component: () => <RequireAuth><CreditosPage /></RequireAuth>,
+});
 
 export const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -29,4 +41,6 @@ export const routeTree = rootRoute.addChildren([
   cadastroRoute,
   onboardingRoute,
   homeRoute,
+  reservasRoute,
+  creditosRoute,
 ]);
