@@ -16,6 +16,14 @@ interface Expense {
   description: string;
   amount_cents: number;
   incurred_on: string;
+  category_id?: string | null;
+}
+
+interface RecurringCategory {
+  id: string;
+  label: string;
+  default_amount_cents: number | null;
+  sort_order: number;
 }
 
 function periodStart(p: Period): Date {
@@ -34,6 +42,32 @@ export function TransactionsPage() {
   const [expForm, setExpForm] = useState({ description: "", amount: "" });
   const [loading, setLoading] = useState(true);
   const [founding, setFounding] = useState({ total: 0, voucherUsed: 0, voucherPending: 0 });
+  const [recurringCategories, setRecurringCategories] = useState<RecurringCategory[]>([]);
+  const [monthExpenses, setMonthExpenses] = useState<Expense[]>([]);
+  const [recurringInputs, setRecurringInputs] = useState<Record<string, string>>({});
+
+  async function loadRecurring() {
+    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+    const [{ data: cats }, { data: exps }] = await Promise.all([
+      supabase.from("recurring_expense_categories").select("*").eq("is_active", true).order("sort_order"),
+      supabase.from("expenses").select("*").not("category_id", "is", null).gte("incurred_on", monthStart.toISOString().slice(0, 10)),
+    ]);
+    setRecurringCategories((cats as RecurringCategory[]) ?? []);
+    setMonthExpenses((exps as Expense[]) ?? []);
+  }
+
+  async function confirmRecurringExpense(cat: RecurringCategory) {
+    const raw = recurringInputs[cat.id] ?? "";
+    const cents = Math.round(parseFloat(raw.replace(",", ".")) * 100);
+    if (isNaN(cents) || cents <= 0) { toast.error("Digite um valor válido"); return; }
+    const { error } = await supabase.from("expenses").insert({
+      description: cat.label, amount_cents: cents, category_id: cat.id,
+    });
+    if (error) { toast.error("Erro ao confirmar — já lançado esse mês?"); return; }
+    setRecurringInputs((s) => ({ ...s, [cat.id]: "" }));
+    loadRecurring();
+    load();
+  }
 
   async function load() {
     const start = periodStart(period).toISOString();
@@ -65,6 +99,7 @@ export function TransactionsPage() {
 
   useEffect(() => {
     load();
+    loadRecurring();
     const ch = supabase.channel("transactions-page")
       .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, load)
       .subscribe();
@@ -238,6 +273,42 @@ export function TransactionsPage() {
           </div>
         </div>
       </div>
+
+      {/* Recurring fixed expenses — confirm before month close */}
+      {recurringCategories.length > 0 && (
+        <div className="rounded-lg p-4 mb-6" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Despesas fixas do mês</p>
+          <p className="text-[10px] text-slate-600 mb-3">Confirme o valor de cada uma antes de fechar o mês — gerencie a lista em Config</p>
+          <div className="flex flex-col gap-2">
+            {recurringCategories.map((cat) => {
+              const confirmed = monthExpenses.find((e) => e.category_id === cat.id);
+              return (
+                <div key={cat.id} className="flex items-center gap-2">
+                  <span className="text-sm text-white flex-1">{cat.label}</span>
+                  {confirmed ? (
+                    <span className="flex items-center gap-2 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: "rgba(52,211,153,0.15)", color: "#34d399" }}>
+                      ✓ {formatCents(confirmed.amount_cents)}
+                    </span>
+                  ) : (
+                    <>
+                      <input
+                        value={recurringInputs[cat.id] ?? ""}
+                        onChange={(e) => setRecurringInputs((s) => ({ ...s, [cat.id]: e.target.value }))}
+                        placeholder="R$ 0,00" inputMode="decimal"
+                        className="w-28 px-3 py-1.5 rounded-lg text-sm border text-white placeholder:text-slate-600 text-right focus:outline-none"
+                        style={{ background: "var(--bg)", borderColor: "var(--dim)" }} />
+                      <button onClick={() => confirmRecurringExpense(cat)}
+                        className="text-xs px-3 py-1.5 rounded-lg font-bold" style={{ background: "var(--amber)", color: "#09090f" }}>
+                        Confirmar
+                      </button>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Expenses */}
       <div className="rounded-lg p-4 mb-6" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>

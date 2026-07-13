@@ -16,6 +16,13 @@ interface PackageRow {
 
 interface Holiday { day: string; label: string }
 
+interface RecurringExpenseCategory {
+  id: string;
+  label: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
 export function SettingsPage() {
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-10">
@@ -26,9 +33,72 @@ export function SettingsPage() {
       <PackagesSection />
       <SplitSection />
       <HolidaysSection />
+      <RecurringExpensesSection />
       <StationsSection />
       <AgentPinSection />
     </div>
+  );
+}
+
+/* ---------- Despesas fixas recorrentes ---------- */
+function RecurringExpensesSection() {
+  const [rows, setRows] = useState<RecurringExpenseCategory[]>([]);
+  const [label, setLabel] = useState("");
+
+  async function load() {
+    const { data } = await supabase.from("recurring_expense_categories").select("*").order("sort_order");
+    setRows(data ?? []);
+  }
+  useEffect(() => { load(); }, []);
+
+  async function add() {
+    if (!label.trim()) return;
+    const { error } = await supabase.from("recurring_expense_categories").insert({
+      label: label.trim(), sort_order: rows.length,
+    });
+    if (error) { toast.error("Erro ao adicionar categoria"); return; }
+    setLabel("");
+    load();
+  }
+
+  async function toggle(row: RecurringExpenseCategory) {
+    const { error } = await supabase.from("recurring_expense_categories").update({ is_active: !row.is_active }).eq("id", row.id);
+    if (error) { toast.error("Erro ao atualizar"); return; }
+    load();
+  }
+
+  async function remove(id: string) {
+    const { error } = await supabase.from("recurring_expense_categories").delete().eq("id", id);
+    if (error) { toast.error("Erro ao remover"); return; }
+    load();
+  }
+
+  return (
+    <Section title="Despesas fixas recorrentes" subtitle="Categorias que aparecem pra confirmar todo mês no Financeiro, antes do fechamento">
+      <div className="flex gap-2 mb-3 max-w-md">
+        <input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="Nova categoria (ex: Aluguel)"
+          className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
+          style={{ background: "var(--surface)", border: "1px solid var(--dim)", color: "white" }}
+        />
+        <button onClick={add} className="px-4 py-2 rounded-lg text-xs font-bold" style={{ background: "var(--amber)", color: "#09090f" }}>
+          Adicionar
+        </button>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {rows.map((r) => (
+          <div key={r.id} className="flex items-center justify-between px-4 py-2 rounded-lg text-sm" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+            <button onClick={() => toggle(r)} className="text-left flex-1" style={{ color: r.is_active ? "white" : "var(--muted)" }}>
+              {r.label} {!r.is_active && <span className="text-[10px]">(inativa)</span>}
+            </button>
+            <button onClick={() => remove(r.id)} className="text-slate-500 hover:text-red-400"><Trash2 size={14} /></button>
+          </div>
+        ))}
+        {rows.length === 0 && <p className="text-xs text-slate-600">Nenhuma categoria cadastrada</p>}
+      </div>
+    </Section>
   );
 }
 
