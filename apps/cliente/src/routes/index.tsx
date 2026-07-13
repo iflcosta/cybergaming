@@ -12,8 +12,9 @@ export function IndexPage() {
       navigate({ to: "/auth/login" });
       return;
     }
-    // Needs profile completion
-    if (!profile?.full_name || !profile?.phone) {
+    // Needs profile completion — onboarding only collects phone/birth_date/cpf,
+    // so that's the only field we can gate on here (full_name is set at signup).
+    if (!profile?.phone) {
       navigate({ to: "/onboarding" });
       return;
     }
