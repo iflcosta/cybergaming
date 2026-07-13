@@ -27,7 +27,8 @@ function Termos() {
         <h2 className="text-xl font-semibold text-text-primary">Voucher</h2>
         <p>
           O voucher founding member concede 25% de desconto no primeiro pacote de horas, válido por
-          60 dias a partir da inauguração (prevista pra setembro de 2026). Limitado a 200 unidades.
+          60 dias a partir da criação da sua conta no app da arena. Depois de usado (ou expirado),
+          founding members mantêm 10% de desconto vitalício em qualquer pacote. Limitado a 200 unidades.
         </p>
         <h2 className="text-xl font-semibold text-text-primary">Transferência</h2>
         <p>

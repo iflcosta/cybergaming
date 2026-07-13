@@ -42,6 +42,12 @@ export function Navbar() {
 
         <div className="flex items-center gap-3">
           <a
+            href="https://app.arena.cyberinformatica.tech"
+            className="hidden md:inline-flex items-center text-[11px] font-semibold uppercase tracking-widest text-text-tertiary transition-colors hover:text-text-primary"
+          >
+            Já é membro? Entrar
+          </a>
+          <a
             href="#form"
             className="group hidden md:inline-flex items-center gap-2 border border-accent-primary/50 px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-accent-primary transition-all duration-300 hover:bg-accent-primary hover:text-text-on-accent"
           >
@@ -83,6 +89,13 @@ export function Navbar() {
           >
             Garantir minha vaga — grátis
             <ArrowRight className="h-4 w-4" />
+          </a>
+          <a
+            href="https://app.arena.cyberinformatica.tech"
+            onClick={close}
+            className="mt-3 flex items-center justify-center py-3 text-xs font-semibold uppercase tracking-widest text-text-tertiary"
+          >
+            Já é membro? Entrar
           </a>
         </nav>
       </div>

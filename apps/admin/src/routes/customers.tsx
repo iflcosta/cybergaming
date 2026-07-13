@@ -21,6 +21,13 @@ export function CustomersPage() {
     load(search);
   }
 
+  async function toggleFounding(c: Profile) {
+    const { data, error } = await supabase.rpc("set_founding_member", { p_user_id: c.id, p_value: !c.is_founding_member });
+    if (error || !data?.ok) { toast.error("Erro ao atualizar Founding Member"); return; }
+    toast.success(`${c.full_name ?? c.email} ${!c.is_founding_member ? "agora é" : "não é mais"} Founding Member`);
+    load(search);
+  }
+
   async function load(q = "") {
     setLoading(true);
     let query = supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(100);
@@ -94,11 +101,16 @@ export function CustomersPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
-                      {c.is_founding_member && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(251,191,36,0.15)", color: "var(--amber)" }}>
-                          ★ FOUNDING
-                        </span>
-                      )}
+                      <button
+                        onClick={() => toggleFounding(c)}
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors"
+                        style={c.is_founding_member
+                          ? { background: "rgba(251,191,36,0.15)", color: "var(--amber)" }
+                          : { background: "var(--bg)", color: "var(--muted)", border: "1px dashed var(--dim)" }}
+                        title={c.is_founding_member ? "Clique para remover Founding Member" : "Clique para tornar Founding Member"}
+                      >
+                        ★ FOUNDING
+                      </button>
                       <span
                         className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                         style={{

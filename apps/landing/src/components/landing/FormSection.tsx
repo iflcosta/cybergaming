@@ -1,10 +1,12 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Check, Loader2 } from "lucide-react";
-import { insertLead } from "@/lib/supabase";
+import { insertLead, getLeadCount } from "@/lib/supabase";
 import { JOGOS, ESTILOS_JOGO, INTERESSES } from "./constants";
 import { useUtmParams } from "./hooks";
 import { Reveal } from "./Reveal";
+
+const FOUNDING_CAP = 200;
 
 function RadioGroup<T extends string>({
   label,
@@ -124,7 +126,14 @@ export function FormSection() {
   const [jogoOutro, setJogoOutro] = useState("");
   const [estilo, setEstilo] = useState<"solo" | "equipe-fixa" | "procurando" | "">("");
   const [interesse, setInteresse] = useState<"competir" | "assistir" | "ambos" | "">("");
+  const [soldOut, setSoldOut] = useState(false);
   const utm = useUtmParams();
+
+  useEffect(() => {
+    getLeadCount().then((count) => {
+      if (count !== null && count >= FOUNDING_CAP) setSoldOut(true);
+    });
+  }, []);
 
   function validate(nome: string, whatsapp: string, email: string) {
     const errs: Record<string, string> = {};
@@ -150,6 +159,12 @@ export function FormSection() {
     if (Object.keys(errs).length) return;
 
     setStatus("loading");
+    const count = await getLeadCount();
+    if (count !== null && count >= FOUNDING_CAP) {
+      setSoldOut(true);
+      setStatus("idle");
+      return;
+    }
     try {
       await insertLead({
         nome,
@@ -193,7 +208,25 @@ export function FormSection() {
         </Reveal>
 
         <Reveal className="mt-10">
-          {status === "success" ? (
+          {soldOut && status !== "success" ? (
+            <div className="rounded-xl border border-white/10 bg-bg-secondary p-10 text-center">
+              <h3 className="font-display text-2xl font-black uppercase tracking-tight">
+                As 200 vagas esgotaram
+              </h3>
+              <p className="mt-3 text-text-secondary">
+                A lista de founding members está fechada. Siga a arena no Instagram pra saber quando
+                abrirmos novas vagas ou a arena em si.
+              </p>
+              <a
+                href="https://instagram.com/cybergg.arena"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 inline-flex items-center gap-2 border border-accent-primary/50 px-6 py-3 text-xs font-bold uppercase tracking-widest text-accent-primary transition-colors hover:bg-accent-primary hover:text-text-on-accent"
+              >
+                Seguir @cybergg.arena
+              </a>
+            </div>
+          ) : status === "success" ? (
             <div
               className="rounded-xl border border-accent-primary/40 p-10 text-center"
               role="status"

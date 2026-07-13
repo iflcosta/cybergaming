@@ -11,6 +11,7 @@ export function Footer() {
           <Link to="/sobre" className="transition-colors hover:text-text-primary">Sobre</Link>
           <Link to="/privacidade" className="transition-colors hover:text-text-primary">Privacidade</Link>
           <Link to="/termos" className="transition-colors hover:text-text-primary">Termos</Link>
+          <a href="https://app.arena.cyberinformatica.tech" className="transition-colors hover:text-text-primary">Entrar</a>
         </div>
         <div className="flex gap-3">
           <a
