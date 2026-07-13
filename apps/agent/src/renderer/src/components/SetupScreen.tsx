@@ -4,6 +4,17 @@ import type { AgentConfig } from "../../../main/store";
 
 const QUIT_HOLD_MS = 3000;
 
+function extractErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  if (err && typeof err === "object" && "message" in err) return String((err as { message: unknown }).message);
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
+}
+
 export function SetupScreen({ onPaired }: { onPaired: (config: AgentConfig) => void }) {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,8 +49,7 @@ export function SetupScreen({ onPaired }: { onPaired: (config: AgentConfig) => v
       await window.agent.setConfig(config);
       onPaired(config);
     } catch (err) {
-      const detail = err instanceof Error ? err.message : String(err);
-      setError(`Erro de conexão: ${detail}`);
+      setError(`Erro de conexão: ${extractErrorMessage(err)}`);
       setLoading(false);
     }
   }
