@@ -276,12 +276,15 @@ export function ReservasPage() {
                   </div>
                 </div>
                 {p.status === "awaiting_payment" && left > 0 && (
-                  <div className="flex items-center gap-2 mt-3">
-                    <span className="text-[10px] text-[--muted]">{left}min para pagar</span>
-                    <button onClick={() => payWithCredits(p.id, "recurring")}
-                      className="ml-auto text-xs px-3 py-1.5 rounded font-bold" style={{ background: "var(--amber)", color: "#09090f" }}>
-                      Pagar com créditos
-                    </button>
+                  <div className="mt-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-[--muted]">{left}min para pagar</span>
+                      <button onClick={() => payWithCredits(p.id, "recurring")}
+                        className="ml-auto text-xs px-3 py-1.5 rounded font-bold" style={{ background: "var(--amber)", color: "#09090f" }}>
+                        Pagar com créditos
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-[--muted] mt-1.5">Sem créditos? Pode pagar no caixa da loja antes do prazo acima.</p>
                   </div>
                 )}
               </div>
@@ -311,12 +314,15 @@ export function ReservasPage() {
                 {cancellable && <button onClick={() => cancel(r)} className="text-xs text-[--muted] underline">Cancelar</button>}
               </div>
               {r.status === "awaiting_payment" && left > 0 && (
-                <div className="flex items-center gap-2 mt-3">
-                  <span className="text-[10px] text-[--muted]">{left}min para pagar</span>
-                  <button onClick={() => payWithCredits(r.id, "reservation")}
-                    className="ml-auto text-xs px-3 py-1.5 rounded font-bold" style={{ background: "var(--amber)", color: "#09090f" }}>
-                    Pagar com créditos
-                  </button>
+                <div className="mt-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-[--muted]">{left}min para pagar</span>
+                    <button onClick={() => payWithCredits(r.id, "reservation")}
+                      className="ml-auto text-xs px-3 py-1.5 rounded font-bold" style={{ background: "var(--amber)", color: "#09090f" }}>
+                      Pagar com créditos
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-[--muted] mt-1.5">Sem créditos? Pode pagar no caixa da loja antes do prazo acima.</p>
                 </div>
               )}
             </div>

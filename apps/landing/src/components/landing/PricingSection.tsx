@@ -1,51 +1,49 @@
+import { useEffect, useState } from "react";
 import { Clock, Moon, Package, ArrowRight } from "lucide-react";
 import { Reveal } from "./Reveal";
+import { supabase } from "@/lib/supabase";
 
-const PRICING = [
-  {
-    icon: Clock,
-    title: "Hora Vale",
-    price: "R$ 12",
-    unit: "/hora",
-    desc: "Ter a Sex, 10h às 18h",
-    color: "text-green-400",
-    border: "border-green-500/20",
-    bg: "bg-green-500/5",
-  },
-  {
-    icon: Clock,
-    title: "Hora Pico",
-    price: "R$ 25",
-    unit: "/hora",
-    desc: "Ter a Sex 18h–22h · Sáb e Dom",
-    color: "text-accent-primary",
-    border: "border-accent-primary/20",
-    bg: "bg-accent-primary/5",
-  },
-  {
-    icon: Package,
-    title: "Pacote 3h",
-    price: "R$ 49,90",
-    unit: "",
-    desc: "Válido em qualquer horário",
-    color: "text-accent-secondary",
-    border: "border-accent-secondary/20",
-    bg: "bg-accent-secondary/5",
-    popular: true,
-  },
-  {
-    icon: Moon,
-    title: "Corujão",
-    price: "R$ 79,90",
-    unit: "",
-    desc: "Sex e Sáb · 22h às 06h",
-    color: "text-yellow-400",
-    border: "border-yellow-500/20",
-    bg: "bg-yellow-500/5",
-  },
+function formatCents(cents: number) {
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }).replace(",00", "");
+}
+
+// Static fallback so the page never breaks if the fetch fails — but the real
+// source of truth is the `packages` table, kept in sync automatically below.
+const FALLBACK_PRICES: Record<string, string> = {
+  hora_vale: "R$ 12", hora_pico: "R$ 25", pacote_3h: "R$ 49,90", corujao: "R$ 79,90",
+};
+
+const PRICING_META = [
+  { code: "hora_vale", icon: Clock, title: "Hora Vale", unit: "/hora", desc: "Ter a Sex, 10h às 18h",
+    color: "text-green-400", border: "border-green-500/20", bg: "bg-green-500/5" },
+  { code: "hora_pico", icon: Clock, title: "Hora Pico", unit: "/hora", desc: "Ter a Sex 18h–22h · Sáb e Dom",
+    color: "text-accent-primary", border: "border-accent-primary/20", bg: "bg-accent-primary/5" },
+  { code: "pacote_3h", icon: Package, title: "Pacote 3h", unit: "", desc: "Válido em qualquer horário",
+    color: "text-accent-secondary", border: "border-accent-secondary/20", bg: "bg-accent-secondary/5", popular: true },
+  { code: "corujao", icon: Moon, title: "Corujão", unit: "", desc: "Sex e Sáb · 22h às 06h",
+    color: "text-yellow-400", border: "border-yellow-500/20", bg: "bg-yellow-500/5" },
 ];
 
 export function PricingSection() {
+  const [prices, setPrices] = useState<Record<string, string>>(FALLBACK_PRICES);
+
+  useEffect(() => {
+    supabase
+      .from("packages")
+      .select("code,price_cents")
+      .eq("is_active", true)
+      .then(({ data }) => {
+        if (!data?.length) return;
+        const next = { ...FALLBACK_PRICES };
+        for (const row of data as { code: string; price_cents: number }[]) {
+          next[row.code] = formatCents(row.price_cents);
+        }
+        setPrices(next);
+      });
+  }, []);
+
+  const PRICING = PRICING_META.map((m) => ({ ...m, price: prices[m.code] ?? FALLBACK_PRICES[m.code] }));
+
   return (
     <section id="precos" className="px-6 py-16 md:py-32">
       <div className="mx-auto max-w-7xl">

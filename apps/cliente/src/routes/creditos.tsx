@@ -10,6 +10,7 @@ interface CreditTx {
   amount_cents: number;
   status: "pending" | "paid" | "failed" | "refunded";
   created_at: string;
+  asaas_payment_id: string | null;
 }
 
 const AMOUNTS = [1000, 2000, 5000, 10000];
@@ -46,7 +47,7 @@ export function CreditosPage() {
     if (!user) return;
     const { data } = await supabase
       .from("transactions")
-      .select("id, amount_cents, status, created_at")
+      .select("id, amount_cents, status, created_at, asaas_payment_id")
       .eq("customer_id", user.id)
       .eq("type", "credit_purchase")
       .order("created_at", { ascending: false })
@@ -104,6 +105,8 @@ export function CreditosPage() {
   }
 
   const pending = history.filter((h) => h.status === "pending");
+  const pendingOnline = pending.filter((h) => h.asaas_payment_id);
+  const pendingCounter = pending.filter((h) => !h.asaas_payment_id);
 
   return (
     <div className="min-h-screen px-5 py-6 max-w-md mx-auto w-full">
@@ -179,13 +182,26 @@ export function CreditosPage() {
         </p>
       </div>
 
-      {pending.length > 0 && (
+      {pendingOnline.length > 0 && (
+        <div className="rounded-xl p-4 mb-3"
+          style={{ background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.4)" }}>
+          <p className="text-xs font-bold" style={{ color: "#60a5fa" }}>
+            {pendingOnline.length === 1
+              ? `Cobrança de ${formatCents(pendingOnline[0].amount_cents)} aguardando confirmação do pagamento`
+              : `${pendingOnline.length} cobranças aguardando confirmação do pagamento`}
+          </p>
+          <p className="text-[10px] text-[--muted] mt-1">
+            Se já pagou, os créditos entram automaticamente em instantes. Se desistiu ou o PIX expirou, gere uma nova cobrança.
+          </p>
+        </div>
+      )}
+      {pendingCounter.length > 0 && (
         <div className="rounded-xl p-4 mb-6"
           style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.4)" }}>
           <p className="text-xs font-bold" style={{ color: "var(--amber)" }}>
-            {pending.length === 1
-              ? `Pedido de ${formatCents(pending[0].amount_cents)} aguardando pagamento no caixa`
-              : `${pending.length} pedidos aguardando pagamento no caixa`}
+            {pendingCounter.length === 1
+              ? `Pedido de ${formatCents(pendingCounter[0].amount_cents)} aguardando pagamento no caixa`
+              : `${pendingCounter.length} pedidos aguardando pagamento no caixa`}
           </p>
         </div>
       )}

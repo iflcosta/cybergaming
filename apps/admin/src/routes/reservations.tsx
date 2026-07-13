@@ -77,8 +77,8 @@ export function ReservationsPage() {
   }
 
   async function setStatus(r: Reservation, status: ReservationStatus) {
-    const { error } = await supabase.from("reservations").update({ status }).eq("id", r.id);
-    if (error) { toast.error("Erro ao atualizar reserva"); return; }
+    const { data, error } = await supabase.rpc("set_reservation_status", { p_reservation_id: r.id, p_status: status });
+    if (error || !data?.ok) { toast.error("Erro ao atualizar reserva"); return; }
     toast.success(`Reserva ${STATUS_META[status].label.toLowerCase()}`);
   }
 

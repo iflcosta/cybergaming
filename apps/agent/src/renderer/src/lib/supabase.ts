@@ -58,21 +58,41 @@ export async function fetchPackages(): Promise<AgentPackage[]> {
   return (data ?? []) as AgentPackage[];
 }
 
-/** Signs in, starts the customer's own session, then immediately signs out —
- * no session/token is ever persisted on the shared kiosk (persistSession: false). */
-export async function loginAndStartSession(email: string, password: string, stationId: string, packageType: string | null) {
+export interface CustomerProfile {
+  full_name: string | null;
+  credits_balance: number;
+}
+
+/** Signs in and fetches the profile for the confirm screen. Caller MUST eventually
+ * call commitOwnSession() or cancelLogin() — both always sign out (try/finally),
+ * so a customer's token never survives an error or an abandoned flow on the shared kiosk. */
+export async function loginCustomer(email: string, password: string) {
   const { error: authErr } = await supabase.auth.signInWithPassword({ email, password });
   if (authErr) return { ok: false as const, error: authErr.message };
 
-  const { data, error } = await supabase.rpc("start_own_session", {
-    p_station_id: stationId,
-    p_package_type: packageType,
-  });
+  const { data, error } = await supabase.from("profiles").select("full_name,credits_balance").single();
+  if (error || !data) {
+    await supabase.auth.signOut();
+    return { ok: false as const, error: error?.message ?? "profile not found" };
+  }
+  return { ok: true as const, profile: data as CustomerProfile };
+}
 
+export async function cancelLogin() {
   await supabase.auth.signOut();
+}
 
-  if (error) return { ok: false as const, error: error.message };
-  return data as { ok: true; session_id: string; price_cents: number; planned_end_at: string | null } | { ok: false; error: string };
+export async function commitOwnSession(stationId: string, packageType: string | null) {
+  try {
+    const { data, error } = await supabase.rpc("start_own_session", {
+      p_station_id: stationId,
+      p_package_type: packageType,
+    });
+    if (error) return { ok: false as const, error: error.message };
+    return data as { ok: true; session_id: string; price_cents: number; planned_end_at: string | null } | { ok: false; error: string };
+  } finally {
+    await supabase.auth.signOut();
+  }
 }
 
 export async function startCourtesySession(stationId: string, pin: string, packageType: string | null) {

@@ -33,11 +33,12 @@ export function TransactionsPage() {
   const [split, setSplit] = useState({ normal_operator_pct: 50, off_operator_pct: 60 });
   const [expForm, setExpForm] = useState({ description: "", amount: "" });
   const [loading, setLoading] = useState(true);
+  const [founding, setFounding] = useState({ total: 0, voucherUsed: 0, voucherPending: 0 });
 
   async function load() {
     const start = periodStart(period).toISOString();
     const startDate = periodStart(period).toISOString().slice(0, 10);
-    const [{ data: txs }, { data: pend }, { data: exps }, { data: cfg }] = await Promise.all([
+    const [{ data: txs }, { data: pend }, { data: exps }, { data: cfg }, { count: fTotal }, { count: fUsed }, { count: fPending }] = await Promise.all([
       supabase.from("transactions")
         .select("*, customer:profiles(full_name, email)")
         .eq("status", "paid")
@@ -50,11 +51,15 @@ export function TransactionsPage() {
         .order("created_at", { ascending: false }),
       supabase.from("expenses").select("*").gte("incurred_on", startDate).order("incurred_on", { ascending: false }),
       supabase.from("app_settings").select("value").eq("key", "partner_split").single(),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_founding_member", true),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_founding_member", true).eq("founding_discount_used", true),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_founding_member", true).eq("founding_discount_used", false),
     ]);
     setTransactions((txs as Tx[]) ?? []);
     setPendingCredits((pend as Tx[]) ?? []);
     setExpenses((exps as Expense[]) ?? []);
     if (cfg?.value) setSplit(cfg.value);
+    setFounding({ total: fTotal ?? 0, voucherUsed: fUsed ?? 0, voucherPending: fPending ?? 0 });
     setLoading(false);
   }
 
@@ -213,6 +218,25 @@ export function TransactionsPage() {
         <p className="text-[10px] text-slate-600 mt-2">
           Despesas rateadas proporcionalmente à receita de cada período · fora de funcionamento = seg, &lt;10h, ≥22h e feriados
         </p>
+      </div>
+
+      {/* Founding members */}
+      <div className="rounded-lg p-4 mb-6" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Founding members</p>
+        <div className="grid grid-cols-3 gap-4 text-sm">
+          <div>
+            <p className="text-[10px] text-slate-500 uppercase">Total</p>
+            <p className="font-black text-white">{founding.total}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-slate-500 uppercase">Voucher usado (10% vitalício)</p>
+            <p className="font-black" style={{ color: "#34d399" }}>{founding.voucherUsed}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-slate-500 uppercase">Voucher pendente (25% disponível)</p>
+            <p className="font-black" style={{ color: "var(--amber)" }}>{founding.voucherPending}</p>
+          </div>
+        </div>
       </div>
 
       {/* Expenses */}

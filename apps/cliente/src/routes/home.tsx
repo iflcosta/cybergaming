@@ -31,6 +31,7 @@ export function HomePage() {
 
   const [packages, setPackages] = useState<PackageRow[]>([]);
   const [session, setSession] = useState<ActiveSession | null>(null);
+  const [history, setHistory] = useState<ActiveSession[]>([]);
   const [now, setNow] = useState(new Date());
   const [discountPct, setDiscountPct] = useState(0);
 
@@ -63,11 +64,23 @@ export function HomePage() {
       setSession((data as ActiveSession) ?? null);
     }
 
+    async function loadHistory() {
+      const { data } = await supabase
+        .from("sessions")
+        .select("*, station:pc_stations(label, station_number)")
+        .eq("customer_id", user!.id)
+        .eq("status", "completed")
+        .order("ended_at", { ascending: false })
+        .limit(5);
+      setHistory((data as ActiveSession[]) ?? []);
+    }
+
     loadSession();
+    loadHistory();
     const ch = supabase.channel("my-session")
       .on("postgres_changes",
         { event: "*", schema: "public", table: "sessions", filter: `customer_id=eq.${user.id}` },
-        loadSession)
+        () => { loadSession(); loadHistory(); })
       .subscribe();
     const tick = setInterval(() => setNow(new Date()), 30_000);
     return () => { supabase.removeChannel(ch); clearInterval(tick); };
@@ -230,6 +243,37 @@ export function HomePage() {
             ))}
           </div>
         </div>
+
+        {/* Session history */}
+        {history.length > 0 && (
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-[--muted] mb-3">
+              Últimas sessões
+            </h2>
+            <div className="flex flex-col gap-2">
+              {history.map((h) => {
+                const dt = h.ended_at ? new Date(h.ended_at) : null;
+                const durationMin = h.ended_at
+                  ? Math.round((new Date(h.ended_at).getTime() - new Date(h.started_at).getTime()) / 60_000)
+                  : null;
+                return (
+                  <div key={h.id} className="rounded-xl p-3 flex items-center justify-between"
+                    style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+                    <div>
+                      <p className="text-xs font-bold text-[--text]">
+                        {dt?.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} · {h.station?.label ?? `PC-${h.station?.station_number ?? "?"}`}
+                      </p>
+                      <p className="text-[10px] text-[--muted]">
+                        {durationMin !== null ? `${durationMin}min` : ""} · {h.package_type ? (packages.find((p) => p.code === h.package_type)?.label ?? h.package_type) : "sessão aberta"}
+                      </p>
+                    </div>
+                    <p className="text-sm font-bold" style={{ color: "var(--amber)" }}>{formatCents(h.price_cents ?? 0)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
       </main>
     </div>

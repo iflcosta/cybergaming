@@ -33,10 +33,19 @@ function createWindow() {
   win.setAlwaysOnTop(true, "pop-up-menu");
   win.setMenuBarVisibility(false);
 
-  // Maintenance shortcut: Ctrl+Shift+I opens DevTools for on-site debugging.
+  // Maintenance shortcut: Ctrl+Shift+I opens DevTools, but only after holding it
+  // for 2s straight — a quick tap does nothing, so a customer poking at the
+  // keyboard can't casually pop DevTools open and inspect the app internals.
+  let devToolsHoldStart: number | null = null;
+  const DEVTOOLS_HOLD_MS = 2000;
   win.webContents.on("before-input-event", (_e, input) => {
-    if (input.control && input.shift && input.key.toLowerCase() === "i") {
+    const isCombo = input.control && input.shift && input.key.toLowerCase() === "i";
+    if (!isCombo) { devToolsHoldStart = null; return; }
+    if (input.type === "keyUp") { devToolsHoldStart = null; return; }
+    if (devToolsHoldStart === null) { devToolsHoldStart = Date.now(); return; }
+    if (Date.now() - devToolsHoldStart >= DEVTOOLS_HOLD_MS) {
       win?.webContents.toggleDevTools();
+      devToolsHoldStart = null;
     }
   });
 

@@ -106,7 +106,7 @@ export function LockScreen({ config }: { config: AgentConfig }) {
           </div>
         )}
 
-        {!isActive && <SelfServicePanel stationId={config.stationId} />}
+        {!isActive && <SelfServicePanel stationId={config.stationId} online={online} />}
 
         {!online && <p style={styles.offline}>⚠ Sem conexão — tentando reconectar…</p>}
       </div>
