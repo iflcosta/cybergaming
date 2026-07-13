@@ -7,6 +7,9 @@ import { StationsPage } from "./routes/stations";
 import { CustomersPage } from "./routes/customers";
 import { TournamentsPage } from "./routes/tournaments";
 import { TransactionsPage } from "./routes/transactions";
+import { ProductsPage } from "./routes/products";
+import { ReservationsPage } from "./routes/reservations";
+import { SettingsPage } from "./routes/settings";
 
 // Root route wraps everything but login uses a plain Outlet (no sidebar/auth guard)
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
@@ -24,6 +27,9 @@ const stationsRoute    = createRoute({ getParentRoute: () => appRoute, path: "/s
 const customersRoute   = createRoute({ getParentRoute: () => appRoute, path: "/customers",    component: CustomersPage });
 const tournamentsRoute = createRoute({ getParentRoute: () => appRoute, path: "/tournaments",  component: TournamentsPage });
 const transactionsRoute = createRoute({ getParentRoute: () => appRoute, path: "/transactions", component: TransactionsPage });
+const productsRoute     = createRoute({ getParentRoute: () => appRoute, path: "/products",     component: ProductsPage });
+const reservationsRoute = createRoute({ getParentRoute: () => appRoute, path: "/reservations", component: ReservationsPage });
+const settingsRoute     = createRoute({ getParentRoute: () => appRoute, path: "/settings",     component: SettingsPage });
 
 export const routeTree = rootRoute.addChildren([
   loginRoute,
@@ -34,5 +40,8 @@ export const routeTree = rootRoute.addChildren([
     customersRoute,
     tournamentsRoute,
     transactionsRoute,
+    productsRoute,
+    reservationsRoute,
+    settingsRoute,
   ]),
 ]);

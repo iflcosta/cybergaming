@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate } from "@tanstack/react-router";
-import { Monitor, Clock, Users, DollarSign, Trophy, LogOut } from "lucide-react";
+import { Monitor, Clock, Users, DollarSign, Trophy, LogOut, Package, CalendarClock, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/auth";
 import { useEffect } from "react";
 
@@ -8,8 +8,11 @@ const navItems = [
   { to: "/sessions",     label: "Sessões",    icon: Clock },
   { to: "/stations",     label: "PCs",        icon: Monitor },
   { to: "/customers",    label: "Clientes",   icon: Users },
+  { to: "/reservations", label: "Reservas",   icon: CalendarClock },
+  { to: "/products",     label: "Produtos",   icon: Package },
   { to: "/tournaments",  label: "Torneios",   icon: Trophy },
   { to: "/transactions", label: "Financeiro", icon: DollarSign },
+  { to: "/settings",     label: "Config",     icon: Settings },
 ];
 
 export function RootLayout() {
