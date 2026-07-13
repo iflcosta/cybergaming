@@ -11,6 +11,11 @@ node_modules
 dist
 dist-ssr
 .output
+.turbo
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
 .vinxi
 .tanstack/**
 .nitro
