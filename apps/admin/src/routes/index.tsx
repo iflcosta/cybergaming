@@ -39,7 +39,10 @@ export function DashboardPage() {
     ]);
 
     const revenue = (txToday ?? []).reduce((acc, t) => acc + (t.amount_cents ?? 0), 0);
-    const uniqueCustomers = new Set((txToday ?? []).map((t) => t.customer_id)).size;
+    // Registered customers count once each; every avulso (null) transaction counts as one
+    const registered = new Set((txToday ?? []).map((t) => t.customer_id).filter(Boolean)).size;
+    const avulsos = (txToday ?? []).filter((t) => !t.customer_id).length;
+    const uniqueCustomers = registered + avulsos;
 
     setStations(pcs ?? []);
     setActiveSessions((sessions as Session[]) ?? []);

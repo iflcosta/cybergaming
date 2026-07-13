@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
-import type { Profile } from "@/lib/database.types";
+import type { Profile, ProfileUpdate } from "@/lib/database.types";
 
 interface AuthState {
   user: User | null;
@@ -13,7 +13,7 @@ interface AuthContextValue extends AuthState {
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
-  updateProfile: (data: Partial<Profile>) => Promise<{ error: string | null }>;
+  updateProfile: (data: ProfileUpdate) => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   }
 
-  async function updateProfile(data: Partial<Profile>) {
+  async function updateProfile(data: ProfileUpdate) {
     if (!state.user) return { error: "Não autenticado" };
     const { error } = await supabase
       .from("profiles")

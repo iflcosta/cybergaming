@@ -57,29 +57,14 @@ export function EndSessionModal({ session, onClose, onSuccess }: Props) {
       return;
     }
 
-    // Fixed package — avulso: create transaction first
-    if (isAvulso && method) {
-      const { error: txErr } = await supabase.from("transactions").insert({
-        customer_id:    null,
-        amount_cents:   session.price_cents,
-        type:           "purchase",
-        payment_method: method,
-        status:         "paid",
-        description:    `${PACKAGES[session.package_type!]?.label ?? session.package_type} — ${session.station?.label ?? "PC"} (avulso)`,
-      });
-      if (txErr) {
-        toast.error("Erro ao registrar pagamento");
-        setLoading(false);
-        return;
-      }
-    }
+    // Fixed package — atomic close (creates avulso transaction inside the RPC)
+    const { data, error } = await supabase.rpc("close_fixed_session", {
+      p_session_id:     session.id,
+      p_payment_method: method,
+      p_ended_at:       new Date().toISOString(),
+    });
 
-    const { error } = await supabase
-      .from("sessions")
-      .update({ status: "completed", ended_at: new Date().toISOString() })
-      .eq("id", session.id);
-
-    if (error) {
+    if (error || !data?.ok) {
       toast.error("Erro ao encerrar sessão");
       setLoading(false);
       return;
