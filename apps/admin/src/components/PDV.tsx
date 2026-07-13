@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Search, Check } from "lucide-react";
+import { X, Search, Check, UserX } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import {
@@ -14,12 +14,13 @@ interface Props {
   preselectedStation?: PcStation;
 }
 
+const STEPS = ["station", "customer", "package", "payment", "confirm"] as const;
+type Step = typeof STEPS[number];
+
 export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props) {
-  const [step, setStep] = useState<"station" | "customer" | "package" | "payment" | "confirm">(
-    preselectedStation ? "customer" : "station"
-  );
+  const [step, setStep] = useState<Step>(preselectedStation ? "customer" : "station");
   const [station, setStation] = useState<PcStation | null>(preselectedStation ?? null);
-  const [customer, setCustomer] = useState<Profile | null>(null);
+  const [customer, setCustomer] = useState<Profile | null | "avulso">(null);
   const [pkg, setPkg] = useState<PackageType | null>(null);
   const [method, setMethod] = useState<PaymentMethod | null>(null);
   const [search, setSearch] = useState("");
@@ -41,39 +42,50 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
   }
 
   async function confirm() {
-    if (!station || !customer || !pkg || !method) return;
+    if (!station || !pkg) return;
+    // Avulso: no payment now (pay at end), so method is optional for avulso
+    if (customer !== "avulso" && !method) return;
+
     setLoading(true);
     const pkgInfo = PACKAGES[pkg];
     const now = new Date();
     const plannedEnd = new Date(now.getTime() + pkgInfo.duration_min * 60_000);
+    const isAvulso = customer === "avulso";
+    const customerId = isAvulso ? null : (customer as Profile)?.id ?? null;
 
-    const { data: tx, error: txErr } = await supabase
-      .from("transactions")
-      .insert({
-        customer_id: customer.id,
-        amount_cents: pkgInfo.price_cents,
-        type: "purchase",
-        payment_method: method,
-        status: "paid",
-        description: `${pkgInfo.label} — ${station.label}`,
-      })
-      .select()
-      .single();
+    let transactionId: string | null = null;
 
-    if (txErr || !tx) {
-      toast.error("Erro ao registrar pagamento");
-      setLoading(false);
-      return;
+    // Only create transaction now if paying upfront (not avulso)
+    if (!isAvulso && customerId && method) {
+      const { data: tx, error: txErr } = await supabase
+        .from("transactions")
+        .insert({
+          customer_id: customerId,
+          amount_cents: pkgInfo.price_cents,
+          type: "purchase",
+          payment_method: method,
+          status: "paid",
+          description: `${pkgInfo.label} — ${station.label}`,
+        })
+        .select()
+        .single();
+
+      if (txErr || !tx) {
+        toast.error("Erro ao registrar pagamento");
+        setLoading(false);
+        return;
+      }
+      transactionId = tx.id;
     }
 
     const { error: sessErr } = await supabase.from("sessions").insert({
-      customer_id: customer.id,
+      customer_id: customerId,
       station_id: station.id,
       package_type: pkg,
       planned_end_at: plannedEnd.toISOString(),
       status: "active",
       price_cents: pkgInfo.price_cents,
-      transaction_id: tx.id,
+      transaction_id: transactionId,
     });
 
     if (sessErr) {
@@ -82,36 +94,37 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
       return;
     }
 
-    toast.success(`Sessão aberta — ${station.label} para ${customer.full_name ?? customer.email}`);
+    const label = isAvulso ? "Avulso" : (customer as Profile).full_name ?? (customer as Profile).email;
+    toast.success(`Sessão aberta — ${station.label} · ${label}`);
     onSuccess();
   }
 
-  const freeStations = stations.filter((s) => s.is_active);
+  const stepIndex = STEPS.indexOf(step);
+  // For avulso, skip payment step (pay at end)
+  const effectiveSteps = customer === "avulso"
+    ? STEPS.filter((s) => s !== "payment")
+    : STEPS;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)" }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.75)" }}>
       <div className="w-full max-w-lg rounded-xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "var(--dim)" }}>
           <div>
             <h2 className="font-bold text-white">PDV — Nova Sessão</h2>
-            <div className="flex items-center gap-2 mt-1">
-              {(["station", "customer", "package", "payment", "confirm"] as const).map((s, i) => (
-                <div key={s} className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 mt-1.5">
+              {effectiveSteps.map((s, i) => (
+                <div key={s} className="flex items-center gap-1.5">
                   <div
                     className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black"
                     style={{
-                      background: step === s ? "var(--amber)" : (
-                        ["station", "customer", "package", "payment", "confirm"].indexOf(step) > i
-                          ? "#22c55e" : "var(--dim)"
-                      ),
-                      color: step === s || ["station", "customer", "package", "payment", "confirm"].indexOf(step) > i
-                        ? "#09090f" : "var(--muted)",
+                      background: step === s ? "var(--amber)" : stepIndex > STEPS.indexOf(s) ? "#22c55e" : "var(--dim)",
+                      color: step === s || stepIndex > STEPS.indexOf(s) ? "#09090f" : "var(--muted)",
                     }}
                   >
-                    {["station", "customer", "package", "payment", "confirm"].indexOf(step) > i ? <Check size={10} /> : i + 1}
+                    {stepIndex > STEPS.indexOf(s) ? <Check size={10} /> : i + 1}
                   </div>
-                  {i < 4 && <div className="w-4 h-px" style={{ background: "var(--dim)" }} />}
+                  {i < effectiveSteps.length - 1 && <div className="w-3 h-px" style={{ background: "var(--dim)" }} />}
                 </div>
               ))}
             </div>
@@ -122,12 +135,12 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
         </div>
 
         <div className="p-6">
-          {/* Step 1: Select station */}
+          {/* Step: Select station */}
           {step === "station" && (
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Selecione o PC</p>
               <div className="grid grid-cols-5 gap-2">
-                {freeStations.map((s) => (
+                {stations.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => { setStation(s); setStep("customer"); }}
@@ -141,13 +154,33 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
             </div>
           )}
 
-          {/* Step 2: Select customer */}
+          {/* Step: Customer */}
           {step === "customer" && (
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
-                PC {station?.station_number} — Buscar cliente
+                PC {station?.station_number} — Cliente
               </p>
-              <div className="relative mb-4">
+
+              {/* Avulso option */}
+              <button
+                onClick={() => { setCustomer("avulso"); setStep("package"); }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-4 transition-colors hover:bg-white/5"
+                style={{ border: "1px solid rgba(251,191,36,0.4)", background: "rgba(251,191,36,0.06)" }}
+              >
+                <UserX size={16} style={{ color: "var(--amber)" }} />
+                <div className="text-left">
+                  <p className="text-sm font-bold" style={{ color: "var(--amber)" }}>Avulso — sem cadastro</p>
+                  <p className="text-xs text-slate-500">Paga ao encerrar a sessão</p>
+                </div>
+              </button>
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex-1 h-px" style={{ background: "var(--dim)" }} />
+                <span className="text-xs text-slate-600">ou buscar cliente</span>
+                <div className="flex-1 h-px" style={{ background: "var(--dim)" }} />
+              </div>
+
+              <div className="relative mb-3">
                 <Search size={14} className="absolute left-3 top-3 text-slate-500" />
                 <input
                   type="text"
@@ -159,8 +192,8 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
                   style={{ background: "var(--bg)", borderColor: "var(--dim)" }}
                 />
               </div>
-              {searching && <p className="text-xs text-slate-500 text-center py-4">Buscando…</p>}
-              <div className="flex flex-col gap-1 max-h-64 overflow-y-auto">
+              {searching && <p className="text-xs text-slate-500 text-center py-3">Buscando…</p>}
+              <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
                 {searchResults.map((c) => (
                   <button
                     key={c.id}
@@ -172,34 +205,26 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
                       <p className="text-sm font-semibold text-white">{c.full_name ?? c.email}</p>
                       <p className="text-xs text-slate-500">{c.phone ?? c.email}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs font-bold" style={{ color: "var(--amber)" }}>
-                        {formatCents(c.credits_balance)}
-                      </p>
-                      {c.is_founding_member && (
-                        <p className="text-[10px] text-yellow-500">★ Founding</p>
-                      )}
-                    </div>
+                    <p className="text-xs font-bold" style={{ color: "var(--amber)" }}>
+                      {formatCents(c.credits_balance)}
+                    </p>
                   </button>
                 ))}
-                {search.length >= 2 && !searching && searchResults.length === 0 && (
-                  <p className="text-xs text-slate-500 text-center py-4">Nenhum cliente encontrado</p>
-                )}
               </div>
             </div>
           )}
 
-          {/* Step 3: Select package */}
+          {/* Step: Package */}
           {step === "package" && (
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
-                {customer?.full_name ?? customer?.email} — Selecione o pacote
+                {customer === "avulso" ? "Avulso" : (customer as Profile)?.full_name ?? (customer as Profile)?.email} — Pacote
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {(Object.entries(PACKAGES) as [PackageType, typeof PACKAGES[PackageType]][]).map(([key, p]) => (
                   <button
                     key={key}
-                    onClick={() => { setPkg(key); setStep("payment"); }}
+                    onClick={() => { setPkg(key); setStep(customer === "avulso" ? "confirm" : "payment"); }}
                     className="p-4 rounded-lg text-left transition-all hover:scale-[1.02]"
                     style={{ background: "var(--bg)", border: `1px solid ${pkg === key ? "var(--amber)" : "var(--dim)"}` }}
                   >
@@ -213,11 +238,11 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
             </div>
           )}
 
-          {/* Step 4: Payment method */}
+          {/* Step: Payment (only for registered customers) */}
           {step === "payment" && (
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
-                {pkg && PACKAGES[pkg].label} — Forma de pagamento
+                {pkg && PACKAGES[pkg].label} — Pagamento
               </p>
               <div className="flex flex-col gap-2">
                 {(Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(([key, label]) => (
@@ -228,32 +253,37 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
                     style={{ border: `1px solid ${method === key ? "var(--amber)" : "var(--dim)"}` }}
                   >
                     <span className="text-sm text-white font-medium">{label}</span>
-                    {key === "credits" && customer && (
-                      <span className="text-xs text-slate-500">
-                        Saldo: {formatCents(customer.credits_balance)}
-                      </span>
-                    )}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Step 5: Confirm */}
-          {step === "confirm" && station && customer && pkg && method && (
+          {/* Step: Confirm */}
+          {step === "confirm" && station && pkg && (
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Confirmar sessão</p>
               <div className="rounded-lg p-4 mb-6 flex flex-col gap-3" style={{ background: "var(--bg)", border: "1px solid var(--dim)" }}>
                 <Row label="PC" value={station.label ?? `PC-${station.station_number}`} />
-                <Row label="Cliente" value={customer.full_name ?? customer.email} />
+                <Row
+                  label="Cliente"
+                  value={customer === "avulso" ? "Avulso" : (customer as Profile)?.full_name ?? (customer as Profile)?.email ?? "—"}
+                />
                 <Row label="Pacote" value={PACKAGES[pkg].label} />
-                <Row label="Duração" value={`${PACKAGES[pkg].duration_min >= 60 ? PACKAGES[pkg].duration_min / 60 + "h" : PACKAGES[pkg].duration_min + "min"}`} />
-                <Row label="Pagamento" value={PAYMENT_METHOD_LABELS[method]} />
+                <Row label="Duração" value={PACKAGES[pkg].duration_min >= 60 ? `${PACKAGES[pkg].duration_min / 60}h` : `${PACKAGES[pkg].duration_min}min`} />
+                {customer !== "avulso" && method && (
+                  <Row label="Pagamento" value={PAYMENT_METHOD_LABELS[method]} />
+                )}
                 <div className="border-t pt-3 flex items-center justify-between" style={{ borderColor: "var(--dim)" }}>
                   <span className="text-xs text-slate-400 uppercase tracking-wider">Total</span>
-                  <span className="text-xl font-black" style={{ color: "var(--amber)" }}>
-                    {formatCents(PACKAGES[pkg].price_cents)}
-                  </span>
+                  <div className="text-right">
+                    <span className="text-xl font-black" style={{ color: "var(--amber)" }}>
+                      {formatCents(PACKAGES[pkg].price_cents)}
+                    </span>
+                    {customer === "avulso" && (
+                      <p className="text-[10px] text-slate-500">cobrar ao encerrar</p>
+                    )}
+                  </div>
                 </div>
               </div>
               <button
@@ -262,7 +292,7 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
                 className="w-full py-3 rounded-lg font-bold text-sm uppercase tracking-wider disabled:opacity-50"
                 style={{ background: "var(--amber)", color: "#09090f" }}
               >
-                {loading ? "Abrindo sessão…" : "Confirmar e Abrir Sessão"}
+                {loading ? "Abrindo…" : "Abrir Sessão"}
               </button>
             </div>
           )}

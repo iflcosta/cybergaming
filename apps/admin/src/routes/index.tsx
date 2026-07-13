@@ -3,6 +3,7 @@ import { Monitor, Clock, DollarSign, Users, Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { formatCents, type Session } from "@/lib/types";
 import { PDV } from "@/components/PDV";
+import { EndSessionModal } from "@/components/EndSessionModal";
 import type { PcStation } from "@/lib/types";
 
 interface Stats {
@@ -17,6 +18,7 @@ export function DashboardPage() {
   const [activeSessions, setActiveSessions] = useState<Session[]>([]);
   const [stations, setStations] = useState<PcStation[]>([]);
   const [showPDV, setShowPDV] = useState(false);
+  const [endSession, setEndSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function load() {
@@ -169,6 +171,15 @@ export function DashboardPage() {
                     <td className="px-4 py-3 text-xs" style={{ color: "var(--amber)" }}>
                       {s.planned_end_at ? new Date(s.planned_end_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—"}
                     </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => setEndSession(s)}
+                        className="text-xs px-2 py-1 rounded"
+                        style={{ color: "#f87171", border: "1px solid rgba(239,68,68,0.3)" }}
+                      >
+                        Encerrar
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -182,6 +193,13 @@ export function DashboardPage() {
           stations={freeStations}
           onClose={() => setShowPDV(false)}
           onSuccess={() => { setShowPDV(false); load(); }}
+        />
+      )}
+      {endSession && (
+        <EndSessionModal
+          session={endSession}
+          onClose={() => setEndSession(null)}
+          onSuccess={() => { setEndSession(null); load(); }}
         />
       )}
     </div>

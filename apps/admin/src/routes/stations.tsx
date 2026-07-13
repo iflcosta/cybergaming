@@ -3,11 +3,13 @@ import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { formatCents, type Session, type PcStation } from "@/lib/types";
 import { PDV } from "@/components/PDV";
+import { EndSessionModal } from "@/components/EndSessionModal";
 
 export function StationsPage() {
   const [stations, setStations] = useState<PcStation[]>([]);
   const [activeSessions, setActiveSessions] = useState<Session[]>([]);
   const [pdvStation, setPdvStation] = useState<PcStation | null>(null);
+  const [endSession, setEndSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function load() {
@@ -20,10 +22,6 @@ export function StationsPage() {
     setLoading(false);
   }
 
-  async function endSession(sessionId: string) {
-    await supabase.from("sessions").update({ status: "completed", ended_at: new Date().toISOString() }).eq("id", sessionId);
-    load();
-  }
 
   useEffect(() => {
     load();
@@ -95,7 +93,7 @@ export function StationsPage() {
                     <p className="text-xs text-slate-500">{formatCents(session.price_cents)}</p>
                   </div>
                   <button
-                    onClick={() => endSession(session.id)}
+                    onClick={() => setEndSession(session)}
                     className="w-full py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors"
                     style={{ background: "rgba(239,68,68,0.12)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)" }}
                   >
@@ -131,6 +129,13 @@ export function StationsPage() {
           preselectedStation={pdvStation}
           onClose={() => setPdvStation(null)}
           onSuccess={() => { setPdvStation(null); load(); }}
+        />
+      )}
+      {endSession && (
+        <EndSessionModal
+          session={endSession}
+          onClose={() => setEndSession(null)}
+          onSuccess={() => { setEndSession(null); load(); }}
         />
       )}
     </div>

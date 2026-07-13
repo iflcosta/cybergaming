@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { formatCents, PACKAGES, type Session, type PcStation } from "@/lib/types";
 import { PDV } from "@/components/PDV";
+import { EndSessionModal } from "@/components/EndSessionModal";
 
 type Tab = "active" | "today" | "all";
 
@@ -11,6 +12,7 @@ export function SessionsPage() {
   const [freeStations, setFreeStations] = useState<PcStation[]>([]);
   const [tab, setTab] = useState<Tab>("active");
   const [showPDV, setShowPDV] = useState(false);
+  const [endSession, setEndSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function load() {
@@ -30,11 +32,6 @@ export function SessionsPage() {
     const occupiedIds = new Set((activeSessions ?? []).map((s) => s.station_id));
     setFreeStations((allStations ?? []).filter((s) => s.is_active && !occupiedIds.has(s.id)));
     setLoading(false);
-  }
-
-  async function endSession(id: string) {
-    await supabase.from("sessions").update({ status: "completed", ended_at: new Date().toISOString() }).eq("id", id);
-    load();
   }
 
   useEffect(() => {
@@ -127,7 +124,7 @@ export function SessionsPage() {
                   <td className="px-4 py-3">
                     {s.status === "active" && (
                       <button
-                        onClick={() => endSession(s.id)}
+                        onClick={() => setEndSession(s)}
                         className="text-xs px-2 py-1 rounded transition-colors"
                         style={{ color: "#f87171", border: "1px solid rgba(239,68,68,0.3)" }}
                       >
@@ -147,6 +144,13 @@ export function SessionsPage() {
           stations={freeStations}
           onClose={() => setShowPDV(false)}
           onSuccess={() => { setShowPDV(false); load(); }}
+        />
+      )}
+      {endSession && (
+        <EndSessionModal
+          session={endSession}
+          onClose={() => setEndSession(null)}
+          onSuccess={() => { setEndSession(null); load(); }}
         />
       )}
     </div>
