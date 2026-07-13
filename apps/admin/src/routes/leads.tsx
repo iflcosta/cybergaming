@@ -9,18 +9,27 @@ interface Lead {
   whatsapp: string;
   email: string;
   jogo_principal: string | null;
+  jogo: string | null;
   estilo_jogo: string | null;
+  situacao_time: string | null;
   interesse_campeonatos: string | null;
   utm_source: string | null;
   utm_medium: string | null;
   converted_profile_id: string | null;
+  is_seed: boolean | null;
 }
 
 const FOUNDING_CAP = 200;
 
+const jogoField = (l: Lead) => l.jogo_principal || l.jogo || "—";
+const estiloField = (l: Lead) => l.estilo_jogo || l.situacao_time || "—";
+
 export function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [search, setSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterJogo, setFilterJogo] = useState("");
+  const [filterEstilo, setFilterEstilo] = useState("");
   const [loading, setLoading] = useState(true);
 
   async function load() {
@@ -38,24 +47,30 @@ export function LeadsPage() {
   }, []);
 
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const [filtered, setFiltered] = useState<Lead[]>([]);
-  useEffect(() => { setFiltered(leads); }, [leads]);
 
   function onSearch(v: string) {
     setSearch(v);
     clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => {
-      const q = v.toLowerCase();
-      setFiltered(!q ? leads : leads.filter((l) =>
-        l.nome?.toLowerCase().includes(q) || l.email?.toLowerCase().includes(q) || l.whatsapp?.includes(q)
-      ));
-    }, 300);
+    searchTimer.current = setTimeout(() => setSearchQuery(v.toLowerCase()), 300);
   }
+
+  const jogos = [...new Set(leads.map(jogoField).filter((j) => j !== "—"))];
+  const estilos = [...new Set(leads.map(estiloField).filter((e) => e !== "—"))];
+
+  const filtered = leads.filter((l) => {
+    const matchesSearch = !searchQuery
+      || l.nome?.toLowerCase().includes(searchQuery)
+      || l.email?.toLowerCase().includes(searchQuery)
+      || l.whatsapp?.includes(searchQuery);
+    const matchesJogo = !filterJogo || jogoField(l) === filterJogo;
+    const matchesEstilo = !filterEstilo || estiloField(l) === filterEstilo;
+    return matchesSearch && matchesJogo && matchesEstilo;
+  });
 
   function exportCSV() {
     const headers = ["nome", "email", "whatsapp", "jogo", "estilo", "interesse", "convertido", "data"];
     const rows = filtered.map((l) => [
-      l.nome, l.email, l.whatsapp, l.jogo_principal ?? "", l.estilo_jogo ?? "", l.interesse_campeonatos ?? "",
+      l.nome, l.email, l.whatsapp, jogoField(l), estiloField(l), l.interesse_campeonatos ?? "",
       l.converted_profile_id ? "sim" : "não",
       new Date(l.created_at).toLocaleString("pt-BR"),
     ]);
@@ -70,6 +85,9 @@ export function LeadsPage() {
   }
 
   const converted = leads.filter((l) => l.converted_profile_id).length;
+  const today = new Date().toISOString().slice(0, 10);
+  const leadsToday = leads.filter((l) => l.created_at?.slice(0, 10) === today).length;
+  const last24h = leads.filter((l) => new Date(l.created_at).getTime() > Date.now() - 86_400_000).length;
 
   if (loading) return <div className="text-slate-500 text-sm">Carregando…</div>;
 
@@ -90,10 +108,18 @@ export function LeadsPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div className="rounded-lg p-4" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
-          <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Total de leads</p>
+          <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Total</p>
           <p className="text-2xl font-black text-white">{leads.length}</p>
+        </div>
+        <div className="rounded-lg p-4" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+          <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Hoje</p>
+          <p className="text-2xl font-black" style={{ color: "#60a5fa" }}>{leadsToday}</p>
+        </div>
+        <div className="rounded-lg p-4" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+          <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Últimas 24h</p>
+          <p className="text-2xl font-black" style={{ color: "#a78bfa" }}>{last24h}</p>
         </div>
         <div className="rounded-lg p-4" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
           <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Vagas restantes</p>
@@ -107,16 +133,49 @@ export function LeadsPage() {
         </div>
       </div>
 
-      <div className="relative mb-6">
-        <Search size={14} className="absolute left-3 top-3 text-slate-500" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => onSearch(e.target.value)}
-          placeholder="Buscar por nome, email ou WhatsApp…"
-          className="w-full pl-9 pr-4 py-2.5 rounded-lg text-sm border text-white placeholder:text-slate-600 focus:outline-none"
+      <div className="flex flex-col sm:flex-row gap-3 mb-2">
+        <div className="relative flex-1">
+          <Search size={14} className="absolute left-3 top-3 text-slate-500" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => onSearch(e.target.value)}
+            placeholder="Buscar por nome, email ou WhatsApp…"
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg text-sm border text-white placeholder:text-slate-600 focus:outline-none"
+            style={{ background: "var(--surface)", borderColor: "var(--dim)" }}
+          />
+        </div>
+        <select
+          value={filterJogo}
+          onChange={(e) => setFilterJogo(e.target.value)}
+          className="px-4 py-2.5 rounded-lg text-sm border text-white focus:outline-none"
           style={{ background: "var(--surface)", borderColor: "var(--dim)" }}
-        />
+        >
+          <option value="">Todos os jogos</option>
+          {jogos.map((j) => <option key={j} value={j}>{j}</option>)}
+        </select>
+        <select
+          value={filterEstilo}
+          onChange={(e) => setFilterEstilo(e.target.value)}
+          className="px-4 py-2.5 rounded-lg text-sm border text-white focus:outline-none"
+          style={{ background: "var(--surface)", borderColor: "var(--dim)" }}
+        >
+          <option value="">Todos os estilos</option>
+          {estilos.map((e) => <option key={e} value={e}>{e}</option>)}
+        </select>
+      </div>
+
+      <div className="mb-4 text-xs text-slate-500">
+        {filtered.length} de {leads.length} leads
+        {(search || filterJogo || filterEstilo) && (
+          <button
+            onClick={() => { setSearch(""); setSearchQuery(""); setFilterJogo(""); setFilterEstilo(""); }}
+            className="ml-2 hover:underline"
+            style={{ color: "var(--amber)" }}
+          >
+            Limpar filtros
+          </button>
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -128,7 +187,7 @@ export function LeadsPage() {
           <table className="w-full text-sm">
             <thead style={{ background: "var(--surface)" }}>
               <tr>
-                {["Nome", "Contato", "Jogo", "Estilo", "Origem", "Data", ""].map((h) => (
+                {["Nome", "Contato", "Jogo", "Estilo", "Campeonatos", "Origem", "Data", ""].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -136,12 +195,21 @@ export function LeadsPage() {
             <tbody>
               {filtered.map((l) => (
                 <tr key={l.id} style={{ borderTop: "1px solid var(--dim)" }}>
-                  <td className="px-4 py-3 font-semibold text-white">{l.nome}</td>
+                  <td className="px-4 py-3 font-semibold text-white">
+                    {l.nome}
+                    {l.is_seed && (
+                      <span className="ml-2 text-[9px] font-bold px-1.5 py-0.5 rounded"
+                        style={{ background: "rgba(234,179,8,0.15)", color: "#eab308", border: "1px solid rgba(234,179,8,0.3)" }}>
+                        SEED
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-slate-400 text-xs">
                     {l.email}<br />{l.whatsapp}
                   </td>
-                  <td className="px-4 py-3 text-slate-400 text-xs">{l.jogo_principal ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-400 text-xs">{l.estilo_jogo ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-400 text-xs">{jogoField(l)}</td>
+                  <td className="px-4 py-3 text-slate-400 text-xs">{estiloField(l)}</td>
+                  <td className="px-4 py-3 text-slate-400 text-xs">{l.interesse_campeonatos ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-500 text-xs">
                     {l.utm_source ? `${l.utm_source}/${l.utm_medium ?? "—"}` : "—"}
                   </td>
