@@ -1,0 +1,89 @@
+export type UserRole = "customer" | "staff" | "admin";
+export type PackageType = "hora_vale" | "hora_pico" | "pacote_3h" | "corujao";
+export type SessionStatus = "active" | "completed" | "cancelled";
+export type PaymentMethod = "pix" | "credit_card" | "debit_card" | "credits" | "cash";
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+
+export interface Profile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  phone: string | null;
+  cpf: string | null;
+  birth_date: string | null;
+  role: UserRole;
+  is_founding_member: boolean;
+  credits_balance: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PcStation {
+  id: string;
+  station_number: number;
+  label: string | null;
+  is_active: boolean;
+  specs: {
+    cpu?: string;
+    gpu?: string;
+    ram?: string;
+    monitor?: string;
+    peripherals?: { keyboard?: string; mouse?: string; headset?: string };
+  } | null;
+  created_at: string;
+}
+
+export interface Session {
+  id: string;
+  customer_id: string;
+  station_id: string;
+  package_type: PackageType;
+  started_at: string;
+  ended_at: string | null;
+  planned_end_at: string | null;
+  status: SessionStatus;
+  price_cents: number;
+  transaction_id: string | null;
+  created_at: string;
+  customer?: Profile;
+  station?: PcStation;
+}
+
+export interface Transaction {
+  id: string;
+  customer_id: string;
+  amount_cents: number;
+  type: string;
+  payment_method: PaymentMethod;
+  status: PaymentStatus;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+  customer?: Profile;
+}
+
+export const PACKAGES: Record<PackageType, { label: string; price_cents: number; duration_min: number; detail: string }> = {
+  hora_vale:  { label: "Hora Vale",  price_cents: 1200, duration_min: 60,  detail: "Seg–Sex até 18h" },
+  hora_pico:  { label: "Hora Pico",  price_cents: 1500, duration_min: 60,  detail: "Pico e fins de semana" },
+  pacote_3h:  { label: "Pacote 3h",  price_cents: 3900, duration_min: 180, detail: "R$13/h — Popular ⭐" },
+  corujao:    { label: "Corujão",    price_cents: 7990, duration_min: 480, detail: "Sex/Sáb · 22h–06h" },
+};
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  pix:         "PIX",
+  credit_card: "Cartão de Crédito",
+  debit_card:  "Cartão de Débito",
+  credits:     "Créditos",
+  cash:        "Dinheiro",
+};
+
+export function formatCents(cents: number) {
+  return `R$${(cents / 100).toFixed(2).replace(".", ",")}`;
+}
+
+export function formatDuration(minutes: number) {
+  if (minutes < 60) return `${minutes}min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m ? `${h}h${m}min` : `${h}h`;
+}
