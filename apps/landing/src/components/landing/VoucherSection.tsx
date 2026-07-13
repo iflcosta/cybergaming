@@ -1,13 +1,8 @@
 import { ArrowRight, Check } from "lucide-react";
-import { useLeadCount } from "./hooks";
 import { TOTAL_SPOTS } from "./constants";
 import { Reveal } from "./Reveal";
 
 export function VoucherSection() {
-  const { count: takenSpots, error: countError } = useLeadCount();
-  const remaining = takenSpots !== null ? TOTAL_SPOTS - takenSpots : null;
-  const percentFilled = takenSpots !== null ? (takenSpots / TOTAL_SPOTS) * 100 : 0;
-
   return (
     <section id="voucher" className="px-6 py-16 md:py-32">
       <div className="mx-auto max-w-4xl">
@@ -19,32 +14,14 @@ export function VoucherSection() {
             <div className="flex flex-col items-center justify-center gap-5 border-b border-white/5 p-6 text-center md:order-2 md:w-56 md:border-b-0 md:border-l md:p-10">
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
-                  Vagas restantes
+                  Vagas
                 </div>
-                {countError ? (
-                  <div className="mt-2 text-xs font-semibold uppercase tracking-widest text-destructive">
-                    Indisponível
-                  </div>
-                ) : (
-                  <>
-                    <div className="mt-2 font-mono font-display text-6xl font-black tabular-nums text-accent-primary leading-none md:text-7xl">
-                      {remaining ?? "—"}
-                    </div>
-                    <div className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
-                      de {TOTAL_SPOTS}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="w-full">
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-accent-primary to-accent-secondary transition-all duration-700"
-                    style={{ width: `${percentFilled}%` }}
-                  />
+                <div className="mt-2 font-display text-3xl font-black text-accent-primary leading-none">
+                  Limitadas
                 </div>
-                <div className="mt-2 text-[10px] text-text-tertiary">{Math.round(percentFilled)}% preenchido</div>
+                <div className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+                  voucher expira 60 dias após a abertura
+                </div>
               </div>
 
               <a
@@ -97,7 +74,9 @@ export function VoucherSection() {
                   <div>
                     <div className="font-bold text-text-primary">OFF vitalício em toda visita</div>
                     <div className="mt-1 text-sm text-text-secondary">
-                      Mantendo 4h+ de uso por mês o desconto nunca expira. Quanto mais você joga, mais economiza.
+                      Mantendo 4h+ de uso por mês o desconto nunca expira. Só no mínimo já são
+                      <span className="font-bold text-accent-secondary"> ~R$120/ano</span> de volta pro seu
+                      bolso — pra sempre.
                     </div>
                   </div>
                 </div>

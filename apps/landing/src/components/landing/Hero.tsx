@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ArrowRight, ChevronDown } from "lucide-react";
-import { useCountdown, useLeadCount } from "./hooks";
-import { OPEN_DATE, TOTAL_SPOTS } from "./constants";
+import { useCountdown } from "./hooks";
+import { OPEN_DATE } from "./constants";
 import { Reveal } from "./Reveal";
 
 function GlitchText({ children, className }: { children: string; className?: string }) {
@@ -20,8 +20,6 @@ function GlitchText({ children, className }: { children: string; className?: str
 
 export function Hero() {
   const countdown = useCountdown(OPEN_DATE);
-  const { count: takenSpots, error: countError } = useLeadCount();
-  const remaining = takenSpots !== null ? TOTAL_SPOTS - takenSpots : null;
   const [hintVisible, setHintVisible] = useState(true);
 
   useEffect(() => {
@@ -70,8 +68,8 @@ export function Hero() {
           className="fade-in-up mx-auto mt-6 max-w-2xl text-base leading-relaxed text-text-secondary md:mt-8 md:text-xl"
           style={{ animationDelay: "100ms" }}
         >
-          Hardware de elite, infraestrutura premium, comunidade focada em performance. A experiência
-          definitiva em gaming chega ao interior paulista.
+          O point de CS2, Valorant e LoL competitivo do interior paulista — PCs de ponta, ping baixo
+          e uma comunidade que joga sério.
         </p>
 
         {/* Countdown */}
@@ -114,25 +112,10 @@ export function Hero() {
           </a>
 
           <div className="flex flex-col items-center gap-1 md:items-start">
-            {countError ? (
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-destructive">
-                Erro ao carregar vagas
-              </span>
-            ) : (
-              <>
-                <div className="flex items-center gap-2">
-                  <span className="font-display text-2xl font-black text-text-primary">
-                    {takenSpots ?? "—"}
-                  </span>
-                  <span className="text-text-tertiary">/</span>
-                  <span className="text-xl font-medium text-text-tertiary">{TOTAL_SPOTS}</span>
-                </div>
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
-                  vagas ocupadas · restam{" "}
-                  <span className="text-accent-tertiary font-bold">{remaining ?? "…"}</span>
-                </span>
-              </>
-            )}
+            <span className="font-display text-lg font-black text-accent-primary">Vagas limitadas</span>
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+              seu voucher de 25% expira 60 dias após a abertura
+            </span>
           </div>
         </div>
       </div>
