@@ -1,22 +1,10 @@
-import { useEffect, useState } from "react";
 import { Monitor, Users, Zap, Clock } from "lucide-react";
 import { Reveal } from "./Reveal";
-import { getLeadCount } from "@/lib/supabase";
-
-const FOUNDING_CAP = 200;
 
 export function StatsBar() {
-  const [remaining, setRemaining] = useState<number | null>(null);
-
-  useEffect(() => {
-    getLeadCount().then((count) => {
-      if (count !== null) setRemaining(Math.max(0, FOUNDING_CAP - count));
-    });
-  }, []);
-
   const stats = [
     { icon: Monitor, value: "10", label: "PCs premium" },
-    { icon: Users, value: remaining === null ? "200" : String(remaining), label: "Vagas restantes" },
+    { icon: Users, value: "Limitadas", label: "Vagas founding member" },
     { icon: Zap, value: "<10ms", label: "Latência" },
     { icon: Clock, value: "Set/26", label: "Abertura" },
   ];
