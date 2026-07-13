@@ -63,7 +63,10 @@ export function ReservationsPage() {
       p_reservation_id: r.id,
       p_payment_method: method,
     });
-    if (error || !data?.ok) { toast.error("Erro ao confirmar pagamento"); return; }
+    if (error || !data?.ok) {
+      toast.error(data?.error === "slot no longer available" ? "Vaga perdida — reserva expirada" : "Erro ao confirmar pagamento");
+      return;
+    }
     toast.success("Pagamento confirmado — reserva efetivada");
   }
 

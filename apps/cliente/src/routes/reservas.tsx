@@ -104,7 +104,12 @@ export function ReservasPage() {
     });
     setSaving(false);
     if (error || !data?.ok) {
-      toast.error(data?.error === "outside business hours (ter-dom 10h-22h)" ? "Fora do horário de funcionamento (ter–dom, 10h–22h)" : "Erro ao criar reserva");
+      const msg = data?.error === "outside business hours (ter-dom 10h-22h)"
+        ? "Fora do horário de funcionamento (ter–dom, 10h–22h)"
+        : data?.error === "not enough stations available"
+        ? `Só há ${data.free} PC(s) livre(s) nesse horário`
+        : "Erro ao criar reserva";
+      toast.error(msg);
       return;
     }
     toast.success(`Reserva criada — ${formatCents(data.price_cents)}. Pague em até 1h para confirmar.`);
@@ -125,9 +130,12 @@ export function ReservasPage() {
     });
     setSavingRec(false);
     if (error || !data?.ok) {
-      toast.error(data?.error === "no valid occurrences left this month (4h advance required)"
+      const msg = data?.error === "no valid occurrences left this month (4h advance required)"
         ? "Não há mais ocorrências válidas este mês para esse dia/horário"
-        : "Erro ao criar plano recorrente");
+        : typeof data?.error === "string" && data.error.startsWith("no room on")
+        ? `Sem vaga em ${new Date(data.conflict_date + "T12:00:00").toLocaleDateString("pt-BR")} — escolha outro dia/horário`
+        : "Erro ao criar plano recorrente";
+      toast.error(msg);
       return;
     }
     toast.success(`Plano criado — ${data.occurrence_count}x por ${formatCents(data.price_cents)}. Pague em até 1h.`);
@@ -139,7 +147,11 @@ export function ReservasPage() {
     const param = kind === "reservation" ? { p_reservation_id: id } : { p_recurring_id: id };
     const { data, error } = await supabase.rpc(rpc, param);
     if (error || !data?.ok) {
-      toast.error(data?.error === "insufficient credits" ? "Créditos insuficientes" : "Erro ao pagar");
+      const msg = data?.error === "insufficient credits" ? "Créditos insuficientes"
+        : data?.error === "slot no longer available" ? "Vaga perdida — outro cliente pagou primeiro. Reserva expirada."
+        : data?.error === "payment window expired" ? "Prazo de pagamento expirado"
+        : "Erro ao pagar";
+      toast.error(msg);
       return;
     }
     toast.success("Pago com créditos! Reserva confirmada.");
