@@ -43,11 +43,16 @@ export interface AgentPackage {
   duration_min: number;
 }
 
+// hora_vale/hora_pico are auto-applied billing rates for open sessions, not
+// standalone products a customer can pick regardless of time of day.
+const FIXED_PACKAGE_CODES = new Set(["pacote_3h", "corujao"]);
+
 export async function fetchPackages(): Promise<AgentPackage[]> {
   const { data, error } = await supabase
     .from("packages")
     .select("code,label,price_cents,duration_min")
     .eq("is_active", true)
+    .in("code", Array.from(FIXED_PACKAGE_CODES))
     .order("sort_order", { ascending: true });
   if (error) throw error;
   return (data ?? []) as AgentPackage[];

@@ -10,6 +10,7 @@ Monorepo Bun workspaces + Turborepo: `apps/landing` (site), `apps/cliente` (PWA 
 
 ## Regras de negócio
 - Tarifas (editáveis em `packages`, tela Config): Hora Vale R$12/h (seg–sex antes das 18h BRT), Hora Pico R$25/h (demais horários e fins de semana); Pacote 3h R$49,90; Corujão R$79,90 (sex/sáb 22h–06h, término fixo às 06:00)
+- `hora_vale`/`hora_pico` são **só as tarifas automáticas da Sessão Aberta**, aplicadas conforme o horário em `close_open_session` — NUNCA devem ser oferecidas como pacote fixo selecionável (senão dá pra "comprar" Hora Vale durante o horário de pico). Telas que listam pacotes fixos (PDV, self-service do agente) devem filtrar só `pacote_3h`/`corujao` — usar `FIXED_PACKAGE_TYPES` em `apps/admin/src/lib/types.ts`. As RPCs `start_own_session`/`start_courtesy_session` também validam isso no servidor.
 - Desconto Founding Member (automático, `customer_discount_pct()`): 25% no primeiro pagamento (voucher, 60 dias do cadastro, marca `profiles.founding_discount_used`) e 10% vitalício depois — aplicado em pacotes, sessão aberta e reservas
 - Sessão aberta = `sessions.package_type IS NULL`, cobrada por tempo real via `close_open_session` (segmentos em `session_billing_segments`, timezone America/Sao_Paulo)
 - Avulso = `sessions.customer_id IS NULL`, paga ao encerrar

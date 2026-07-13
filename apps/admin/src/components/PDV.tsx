@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import {
   type PcStation, type Profile, type PackageType, type PaymentMethod,
-  PAYMENT_METHOD_LABELS, formatCents, formatDuration,
+  PAYMENT_METHOD_LABELS, FIXED_PACKAGE_TYPES, formatCents, formatDuration,
 } from "@/lib/types";
 import { usePackages, type PackageInfo } from "@/lib/packages";
 
@@ -285,7 +285,8 @@ export function PDV({ stations, onClose, onSuccess, preselectedStation }: Props)
                 <div className="flex-1 h-px" style={{ background: "var(--dim)" }} />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {(Object.entries(packages) as [PackageType, PackageInfo][]).map(([key, p]) => {
+                {FIXED_PACKAGE_TYPES.map((key) => {
+                  const p = packages[key];
                   const discounted = discountPct > 0;
                   return (
                     <button

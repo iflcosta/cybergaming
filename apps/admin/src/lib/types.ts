@@ -1,5 +1,9 @@
 export type UserRole = "customer" | "staff" | "admin";
 export type PackageType = "hora_vale" | "hora_pico" | "pacote_3h" | "corujao";
+
+/** hora_vale/hora_pico are auto-applied billing rates for open sessions, not
+ * standalone products — only these two are actually selectable as a fixed package. */
+export const FIXED_PACKAGE_TYPES: PackageType[] = ["pacote_3h", "corujao"];
 export type SessionStatus = "active" | "completed" | "cancelled";
 export type PaymentMethod = "pix" | "credit_card" | "debit_card" | "credits" | "cash";
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
