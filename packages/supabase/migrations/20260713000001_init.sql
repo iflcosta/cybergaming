@@ -32,7 +32,7 @@ create table public.profiles (
 alter table public.profiles enable row level security;
 
 create policy "profiles: own read"   on public.profiles for select using (auth.uid() = id);
-create policy "profiles: own update" on public.profiles for update using (auth.uid() = id);
+create policy "profiles: own update" on public.profiles for update using (auth.uid() = id) with check (auth.uid() = id);
 create policy "profiles: staff read" on public.profiles for select using (
   exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin'))
 );
@@ -49,9 +49,9 @@ create table public.pc_stations (
 
 alter table public.pc_stations enable row level security;
 create policy "stations: all read"  on public.pc_stations for select using (true);
-create policy "stations: staff write" on public.pc_stations for all using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin'))
-);
+create policy "stations: staff write" on public.pc_stations for all
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin')))
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin')));
 
 -- Insert the 10 stations
 insert into public.pc_stations (station_number, label, specs) values
@@ -85,9 +85,9 @@ create policy "transactions: own read" on public.transactions for select using (
 create policy "transactions: staff read" on public.transactions for select using (
   exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin'))
 );
-create policy "transactions: staff write" on public.transactions for all using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin'))
-);
+create policy "transactions: staff write" on public.transactions for all
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin')))
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin')));
 
 -- ── sessions ───────────────────────────────────────────────────────────────
 create table public.sessions (
@@ -106,9 +106,9 @@ create table public.sessions (
 
 alter table public.sessions enable row level security;
 create policy "sessions: own read" on public.sessions for select using (auth.uid() = customer_id);
-create policy "sessions: staff all" on public.sessions for all using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin'))
-);
+create policy "sessions: staff all" on public.sessions for all
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin')))
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin')));
 
 -- ── tournaments ────────────────────────────────────────────────────────────
 create table public.tournaments (
@@ -128,9 +128,9 @@ create table public.tournaments (
 
 alter table public.tournaments enable row level security;
 create policy "tournaments: all read"   on public.tournaments for select using (true);
-create policy "tournaments: staff write" on public.tournaments for all using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin'))
-);
+create policy "tournaments: staff write" on public.tournaments for all
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin')))
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin')));
 
 -- ── teams ──────────────────────────────────────────────────────────────────
 create table public.teams (
@@ -147,9 +147,9 @@ create table public.teams (
 alter table public.teams enable row level security;
 create policy "teams: all read" on public.teams for select using (true);
 create policy "teams: captain write" on public.teams for update using (auth.uid() = captain_id);
-create policy "teams: staff all" on public.teams for all using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin'))
-);
+create policy "teams: staff all" on public.teams for all
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin')))
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin')));
 
 -- ── team_members ───────────────────────────────────────────────────────────
 create table public.team_members (
@@ -161,10 +161,10 @@ create table public.team_members (
 
 alter table public.team_members enable row level security;
 create policy "team_members: all read"  on public.team_members for select using (true);
-create policy "team_members: own write" on public.team_members for insert using (auth.uid() = profile_id);
-create policy "team_members: staff all" on public.team_members for all using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin'))
-);
+create policy "team_members: own write" on public.team_members for insert with check (auth.uid() = profile_id);
+create policy "team_members: staff all" on public.team_members for all
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin')))
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('staff', 'admin')));
 
 -- ── updated_at trigger ─────────────────────────────────────────────────────
 create or replace function public.set_updated_at()
