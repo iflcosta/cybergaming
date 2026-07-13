@@ -1,4 +1,4 @@
 {
-  "buildCommand": "cd apps/landing && bun run build",
+  "buildCommand": "cd apps/landing && bun run build && cd ../.. && mkdir -p .vercel && cp -r apps/landing/.vercel/output .vercel/",
   "installCommand": "bun install"
 }
