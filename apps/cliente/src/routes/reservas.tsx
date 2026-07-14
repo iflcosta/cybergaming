@@ -28,6 +28,7 @@ interface RecurringPlan {
   price_cents: number;
   status: "awaiting_payment" | "active" | "cancelled" | "expired";
   payment_deadline_at: string | null;
+  station_count: number;
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -74,6 +75,7 @@ export function ReservasPage() {
   const [dow, setDow] = useState(initialDowFromUrl);
   const [recTime, setRecTime] = useState("");
   const [recDuration, setRecDuration] = useState(60);
+  const [recStationCount, setRecStationCount] = useState(5);
   const [savingRec, setSavingRec] = useState(false);
 
   async function load() {
@@ -140,6 +142,7 @@ export function ReservasPage() {
       p_start_time: recTime,
       p_duration_min: recDuration,
       p_month: thisMonth.toISOString().slice(0, 10),
+      p_station_count: recStationCount,
     });
     setSavingRec(false);
     if (error || !data?.ok) {
@@ -147,6 +150,8 @@ export function ReservasPage() {
         ? "Não há mais ocorrências válidas este mês para esse dia/horário"
         : typeof data?.error === "string" && data.error.startsWith("no room on")
         ? `Sem vaga em ${new Date(data.conflict_date + "T12:00:00").toLocaleDateString("pt-BR")} — escolha outro dia/horário`
+        : data?.error === "reservations require at least 5 stations (group only)"
+        ? "Reserva recorrente é só pra grupo, mínimo 5 PCs"
         : "Erro ao criar plano recorrente";
       toast.error(msg);
       return;
@@ -264,6 +269,13 @@ export function ReservasPage() {
               ))}
             </div>
           </Field>
+          <Field label="Quantos PCs? (reserva só pra grupo, mínimo 5)">
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setRecStationCount(Math.max(5, recStationCount - 1))} className={stepBtnCls}>−</button>
+              <span className="text-lg font-black text-[--text] w-8 text-center">{recStationCount}</span>
+              <button type="button" onClick={() => setRecStationCount(Math.min(10, recStationCount + 1))} className={stepBtnCls}>+</button>
+            </div>
+          </Field>
           <button type="submit" disabled={savingRec} className={submitCls} style={{ background: "var(--amber)", color: "#09090f" }}>
             {savingRec ? "Calculando…" : "Criar plano do mês"}
           </button>
@@ -285,7 +297,7 @@ export function ReservasPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-bold text-[--text]">
-                      {WEEKDAYS[p.day_of_week]} · {p.start_time.slice(0, 5)} · {p.duration_min / 60}h · {p.occurrence_count}x
+                      {WEEKDAYS[p.day_of_week]} · {p.start_time.slice(0, 5)} · {p.duration_min / 60}h · {p.occurrence_count}x · {p.station_count} PCs
                     </p>
                     <p className="text-xs" style={{ color: meta.color }}>{meta.label} · {formatCents(p.price_cents)}</p>
                   </div>
