@@ -183,6 +183,13 @@ export function ReservasPage() {
     load();
   }
 
+  async function cancelRecurring(p: RecurringPlan) {
+    const { data, error } = await supabase.rpc("cancel_my_recurring_reservation", { p_recurring_group_id: p.id });
+    if (error || !data?.ok) { toast.error("Erro ao cancelar plano"); return; }
+    toast.success("Plano cancelado");
+    load();
+  }
+
   function minutesLeft(deadline: string | null): number {
     if (!deadline) return 0;
     return Math.max(0, Math.round((new Date(deadline).getTime() - now.getTime()) / 60_000));
@@ -292,6 +299,7 @@ export function ReservasPage() {
           {plans.map((p) => {
             const meta = STATUS_LABELS[p.status];
             const left = minutesLeft(p.payment_deadline_at);
+            const planCancellable = p.status === "awaiting_payment" || p.status === "active";
             return (
               <div key={p.id} className="rounded-xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
                 <div className="flex items-center justify-between">
@@ -301,6 +309,7 @@ export function ReservasPage() {
                     </p>
                     <p className="text-xs" style={{ color: meta.color }}>{meta.label} · {formatCents(p.price_cents)}</p>
                   </div>
+                  {planCancellable && <button onClick={() => cancelRecurring(p)} className="text-xs text-[--muted] underline">Cancelar</button>}
                 </div>
                 {p.status === "awaiting_payment" && left > 0 && (
                   <div className="mt-3">
