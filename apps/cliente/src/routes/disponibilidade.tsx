@@ -151,16 +151,19 @@ export function DisponibilidadePage() {
           <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
             {Array.from({ length: 14 }, (_, i) => i).map((offset) => {
               const d = todayISO(offset);
-              const label = offset === 0 ? "Hoje" : offset === 1 ? "Amanhã" : new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short" });
+              const dt = new Date(d + "T12:00:00");
+              const label = offset === 0 ? "Hoje" : offset === 1 ? "Amanhã" : dt.toLocaleDateString("pt-BR", { weekday: "short" });
+              const dateNum = dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
               return (
                 <button key={d} onClick={() => { setDay(d); setLoading(true); }}
-                  className="flex-shrink-0 px-3.5 py-3 rounded-lg text-xs font-bold capitalize"
+                  className="flex-shrink-0 px-3.5 py-2.5 rounded-lg text-xs font-bold capitalize flex flex-col items-center gap-0.5"
                   style={{
                     background: day === d ? "var(--amber)" : "var(--bg)",
                     color: day === d ? "#09090f" : "var(--text)",
                     border: `1px solid ${day === d ? "var(--amber)" : "var(--dim)"}`,
                   }}>
-                  {label}
+                  <span>{label}</span>
+                  <span className="text-[9px] font-normal opacity-70">{dateNum}</span>
                 </button>
               );
             })}
@@ -186,7 +189,12 @@ export function DisponibilidadePage() {
                       onClick={() => setExpandedDow(isExpanded ? null : dow)}
                       className="w-full flex items-center gap-2 px-3 py-3"
                     >
-                      <span className="text-xs font-bold text-[--text] w-16 text-left">{WEEKDAYS[dow].slice(0, 3)}</span>
+                      <span className="text-left w-16">
+                        <span className="block text-xs font-bold text-[--text]">{WEEKDAYS[dow].slice(0, 3)}</span>
+                        <span className="block text-[9px] text-[--muted]">
+                          {new Date(nextWeekdayISO(dow) + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                        </span>
+                      </span>
                       <div className="flex-1 flex gap-0.5">
                         {daySlots.map((s) => {
                           const pct = s.total_count > 0 ? s.free_count / s.total_count : 0;
