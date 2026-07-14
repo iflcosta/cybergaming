@@ -44,9 +44,20 @@ const DURATIONS = [60, 120, 180, 240];
 const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const MIN_ADVANCE_MS = 4 * 3600_000;
 
+function initialModeFromUrl(): "avulsa" | "recorrente" {
+  if (typeof window === "undefined") return "avulsa";
+  return new URLSearchParams(window.location.search).get("mode") === "recorrente" ? "recorrente" : "avulsa";
+}
+function initialDowFromUrl(): number {
+  if (typeof window === "undefined") return 2;
+  const raw = new URLSearchParams(window.location.search).get("dow");
+  const n = raw ? parseInt(raw, 10) : NaN;
+  return !isNaN(n) && n >= 0 && n <= 6 && n !== 1 ? n : 2;
+}
+
 export function ReservasPage() {
   const { user } = useAuth();
-  const [mode, setMode] = useState<"avulsa" | "recorrente">("avulsa");
+  const [mode, setMode] = useState<"avulsa" | "recorrente">(initialModeFromUrl);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [plans, setPlans] = useState<RecurringPlan[]>([]);
   const [now, setNow] = useState(new Date());
@@ -55,12 +66,12 @@ export function ReservasPage() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState(60);
-  const [stationCount, setStationCount] = useState(1);
+  const [stationCount, setStationCount] = useState(5);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
 
   // recorrente form
-  const [dow, setDow] = useState(2);
+  const [dow, setDow] = useState(initialDowFromUrl);
   const [recTime, setRecTime] = useState("");
   const [recDuration, setRecDuration] = useState(60);
   const [savingRec, setSavingRec] = useState(false);
@@ -108,12 +119,14 @@ export function ReservasPage() {
         ? "Fora do horário de funcionamento (ter–dom, 10h–22h)"
         : data?.error === "not enough stations available"
         ? `Só há ${data.free} PC(s) livre(s) nesse horário`
+        : data?.error === "reservations require at least 5 stations (group only)"
+        ? "Reserva avulsa é só pra grupo, mínimo 5 PCs"
         : "Erro ao criar reserva";
       toast.error(msg);
       return;
     }
     toast.success(`Reserva criada — ${formatCents(data.price_cents)}. Pague em até 1h para confirmar.`);
-    setDate(""); setTime(""); setNote(""); setStationCount(1);
+    setDate(""); setTime(""); setNote(""); setStationCount(5);
     load();
   }
 
@@ -159,8 +172,8 @@ export function ReservasPage() {
   }
 
   async function cancel(r: Reservation) {
-    const { error } = await supabase.from("reservations").update({ status: "cancelled" }).eq("id", r.id);
-    if (error) { toast.error("Erro ao cancelar"); return; }
+    const { data, error } = await supabase.rpc("cancel_my_reservation", { p_reservation_id: r.id });
+    if (error || !data?.ok) { toast.error("Erro ao cancelar"); return; }
     toast.success("Reserva cancelada");
     load();
   }
@@ -213,9 +226,9 @@ export function ReservasPage() {
               ))}
             </div>
           </Field>
-          <Field label={`Quantos PCs? ${stationCount >= 5 ? "(reserva em grupo)" : ""}`}>
+          <Field label="Quantos PCs? (reserva só pra grupo, mínimo 5)">
             <div className="flex items-center gap-3">
-              <button type="button" onClick={() => setStationCount(Math.max(1, stationCount - 1))} className={stepBtnCls}>−</button>
+              <button type="button" onClick={() => setStationCount(Math.max(5, stationCount - 1))} className={stepBtnCls}>−</button>
               <span className="text-lg font-black text-[--text] w-8 text-center">{stationCount}</span>
               <button type="button" onClick={() => setStationCount(Math.min(10, stationCount + 1))} className={stepBtnCls}>+</button>
             </div>
@@ -234,9 +247,11 @@ export function ReservasPage() {
           <p className="text-xs font-bold uppercase tracking-widest text-[--muted]">Plano do mês — mesmo dia toda semana</p>
           <Field label="Dia da semana">
             <div className="grid grid-cols-3 gap-2">
-              {WEEKDAYS.map((w, i) => i === 1 ? null : (
-                <ToggleBtn key={i} active={dow === i} onClick={() => setDow(i)}>{w.slice(0, 3)}</ToggleBtn>
-              ))}
+              {WEEKDAYS.map((w, i) => i)
+                .filter((i) => i !== 1)
+                .map((i) => (
+                  <ToggleBtn key={i} active={dow === i} onClick={() => setDow(i)}>{WEEKDAYS[i].slice(0, 3)}</ToggleBtn>
+                ))}
             </div>
           </Field>
           <Field label="Horário">
@@ -335,7 +350,7 @@ export function ReservasPage() {
 }
 
 const inputCls = "px-3 py-2.5 rounded-lg text-sm bg-[--bg] border border-[--dim] text-[--text] placeholder:text-[--dim] focus:outline-none focus:border-[--amber]";
-const stepBtnCls = "w-8 h-8 rounded font-bold text-[--text] bg-[--bg] border border-[--dim]";
+const stepBtnCls = "w-11 h-11 rounded font-bold text-[--text] bg-[--bg] border border-[--dim]";
 const submitCls = "w-full py-3 rounded-lg font-bold text-sm uppercase tracking-wider disabled:opacity-50";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -349,7 +364,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function ToggleBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} className="py-2 rounded-lg text-xs font-bold"
+    <button type="button" onClick={onClick} className="py-3 rounded-lg text-xs font-bold"
       style={{
         background: active ? "var(--amber)" : "var(--bg)",
         color: active ? "#09090f" : "var(--text)",

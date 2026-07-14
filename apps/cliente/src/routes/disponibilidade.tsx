@@ -11,11 +11,54 @@ function todayISO(offsetDays = 0) {
   return d.toISOString().slice(0, 10);
 }
 
+function nextWeekdayISO(dow: number) {
+  const d = new Date();
+  const diff = (dow - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
+const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+function slotColor(pct: number) {
+  return pct === 0 ? "#f87171" : pct < 0.4 ? "var(--amber)" : "#34d399";
+}
+
+function HourBars({ slots }: { slots: HourSlot[] }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      {slots.map((s) => {
+        const pct = s.total_count > 0 ? s.free_count / s.total_count : 0;
+        const color = slotColor(pct);
+        return (
+          <div key={s.hour} className="flex items-center gap-3">
+            <span className="text-xs text-[--muted] w-10">{s.hour}h</span>
+            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "var(--bg)" }}>
+              <div className="h-full rounded-full" style={{ width: `${pct * 100}%`, background: color }} />
+            </div>
+            <span className="text-xs font-bold w-14 text-right" style={{ color }}>
+              {s.free_count}/{s.total_count}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function DisponibilidadePage() {
+  const [tab, setTab] = useState<"dia" | "semana">("dia");
+
+  // "Hoje" mode
   const [day, setDay] = useState(todayISO());
   const [slots, setSlots] = useState<HourSlot[]>([]);
   const [stations, setStations] = useState<StationStatus[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // "Padrão semanal" mode
+  const [weekSlots, setWeekSlots] = useState<Record<number, HourSlot[]>>({});
+  const [weekLoading, setWeekLoading] = useState(false);
+  const [expandedDow, setExpandedDow] = useState<number | null>(null);
 
   async function load() {
     const [{ data: avail }, { data: live }] = await Promise.all([
@@ -27,22 +70,39 @@ export function DisponibilidadePage() {
     setLoading(false);
   }
 
+  async function loadWeek() {
+    setWeekLoading(true);
+    const days = [0, 1, 2, 3, 4, 5, 6].filter((d) => d !== 1); // arena fechada seg
+    const results = await Promise.all(
+      days.map((dow) => supabase.rpc("get_station_availability", { p_day: nextWeekdayISO(dow) }))
+    );
+    const next: Record<number, HourSlot[]> = {};
+    days.forEach((dow, i) => { next[dow] = (results[i].data as HourSlot[]) ?? []; });
+    setWeekSlots(next);
+    setWeekLoading(false);
+  }
+
   useEffect(() => {
     load();
     const ch = supabase.channel("public-availability")
       .on("postgres_changes", { event: "*", schema: "public", table: "sessions" }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, () => { load(); loadWeek(); })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [day]);
+
+  useEffect(() => {
+    if (tab === "semana" && Object.keys(weekSlots).length === 0) loadWeek();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   const occupied = stations.filter((s) => s.is_occupied).length;
 
   return (
     <div className="min-h-screen px-5 py-6 max-w-md mx-auto w-full">
       <div className="flex items-center gap-3 mb-6">
-        <Link to="/home" className="text-[--muted] text-sm">←</Link>
+        <Link to="/home" className="text-[--muted] text-sm py-1">←</Link>
         <h1 className="text-lg font-black text-[--text]">Disponibilidade</h1>
       </div>
 
@@ -74,48 +134,86 @@ export function DisponibilidadePage() {
         )}
       </div>
 
-      {/* Availability by hour */}
-      <div className="rounded-xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
-        <p className="text-xs font-bold uppercase tracking-widest text-[--muted] mb-3">Vagas para reserva</p>
-        <div className="flex gap-2 mb-4">
-          {[0, 1, 2].map((offset) => {
-            const d = todayISO(offset);
-            const label = offset === 0 ? "Hoje" : offset === 1 ? "Amanhã" : new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short" });
-            return (
-              <button key={d} onClick={() => { setDay(d); setLoading(true); }}
-                className="flex-1 py-2 rounded-lg text-xs font-bold capitalize"
-                style={{
-                  background: day === d ? "var(--amber)" : "var(--bg)",
-                  color: day === d ? "#09090f" : "var(--text)",
-                  border: `1px solid ${day === d ? "var(--amber)" : "var(--dim)"}`,
-                }}>
-                {label}
-              </button>
-            );
-          })}
-        </div>
-        {loading ? (
-          <p className="text-xs text-[--muted]">Carregando…</p>
-        ) : (
-          <div className="flex flex-col gap-1.5">
-            {slots.map((s) => {
-              const pct = s.total_count > 0 ? s.free_count / s.total_count : 0;
-              const color = pct === 0 ? "#f87171" : pct < 0.4 ? "var(--amber)" : "#34d399";
+      {/* Mode toggle */}
+      <div className="flex gap-2 mb-4 p-1 rounded-lg" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+        {(["dia", "semana"] as const).map((t) => (
+          <button key={t} onClick={() => setTab(t)}
+            className="flex-1 py-2.5 rounded-md text-xs font-bold"
+            style={{ background: tab === t ? "var(--amber)" : "transparent", color: tab === t ? "#09090f" : "var(--muted)" }}>
+            {t === "dia" ? "Por dia" : "Padrão semanal"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "dia" ? (
+        <div className="rounded-xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+          <p className="text-xs font-bold uppercase tracking-widest text-[--muted] mb-3">Vagas para reserva</p>
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+            {Array.from({ length: 14 }, (_, i) => i).map((offset) => {
+              const d = todayISO(offset);
+              const label = offset === 0 ? "Hoje" : offset === 1 ? "Amanhã" : new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short" });
               return (
-                <div key={s.hour} className="flex items-center gap-3">
-                  <span className="text-xs text-[--muted] w-10">{s.hour}h</span>
-                  <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "var(--bg)" }}>
-                    <div className="h-full rounded-full" style={{ width: `${pct * 100}%`, background: color }} />
-                  </div>
-                  <span className="text-xs font-bold w-16 text-right" style={{ color }}>
-                    {s.free_count}/{s.total_count} livres
-                  </span>
-                </div>
+                <button key={d} onClick={() => { setDay(d); setLoading(true); }}
+                  className="flex-shrink-0 px-3.5 py-3 rounded-lg text-xs font-bold capitalize"
+                  style={{
+                    background: day === d ? "var(--amber)" : "var(--bg)",
+                    color: day === d ? "#09090f" : "var(--text)",
+                    border: `1px solid ${day === d ? "var(--amber)" : "var(--dim)"}`,
+                  }}>
+                  {label}
+                </button>
               );
             })}
           </div>
-        )}
-      </div>
+          {loading ? <p className="text-xs text-[--muted]">Carregando…</p> : <HourBars slots={slots} />}
+        </div>
+      ) : (
+        <div className="rounded-xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+          <p className="text-xs font-bold uppercase tracking-widest text-[--muted] mb-1">Padrão por dia da semana</p>
+          <p className="text-[10px] text-[--muted] mb-4">
+            Pra quem quer reserva mensal — mostra a próxima ocorrência de cada dia. Toque num dia pra ver hora a hora.
+          </p>
+          {weekLoading ? (
+            <p className="text-xs text-[--muted]">Carregando…</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {[0, 2, 3, 4, 5, 6, 1].filter((d) => weekSlots[d]).map((dow) => {
+                const daySlots = weekSlots[dow] ?? [];
+                const isExpanded = expandedDow === dow;
+                return (
+                  <div key={dow} className="rounded-lg" style={{ background: "var(--bg)", border: "1px solid var(--dim)" }}>
+                    <button
+                      onClick={() => setExpandedDow(isExpanded ? null : dow)}
+                      className="w-full flex items-center gap-2 px-3 py-3"
+                    >
+                      <span className="text-xs font-bold text-[--text] w-16 text-left">{WEEKDAYS[dow].slice(0, 3)}</span>
+                      <div className="flex-1 flex gap-0.5">
+                        {daySlots.map((s) => {
+                          const pct = s.total_count > 0 ? s.free_count / s.total_count : 0;
+                          return <div key={s.hour} className="flex-1 h-4 rounded-sm" style={{ background: slotColor(pct) }} />;
+                        })}
+                      </div>
+                      <span className="text-[--muted] text-xs">{isExpanded ? "▲" : "▼"}</span>
+                    </button>
+                    {isExpanded && (
+                      <div className="px-3 pb-3">
+                        <HourBars slots={daySlots} />
+                        <a
+                          href={`/reservas?mode=recorrente&dow=${dow}`}
+                          className="block mt-3 py-2.5 rounded-lg text-center text-xs font-bold uppercase tracking-wider"
+                          style={{ background: "var(--amber)", color: "#09090f" }}
+                        >
+                          Reservar mensal nesse dia
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       <Link to="/reservas" className="block mt-6 py-3 rounded-lg font-bold text-sm uppercase tracking-wider text-center"
         style={{ background: "var(--amber)", color: "#09090f" }}>

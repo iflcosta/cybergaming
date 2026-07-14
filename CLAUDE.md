@@ -20,10 +20,11 @@ Monorepo Bun workspaces + Turborepo: `apps/landing` (site), `apps/cliente` (PWA 
 - Índice único: 1 sessão ativa por PC
 
 ## Reservas
-- Avulsa/grupo (`reservations`, até 10 PCs, badge "grupo" a partir de 5): antecedência mínima 4h, ter–dom 10h–22h, preço = tarifa vale/pico × duração (ou pacote_3h se 180min), × nº de PCs
-- Recorrente mensal (`recurring_reservations` → materializa em `reservations` no pagamento): mesmo dia da semana + horário todo mês; 3h/sessão = preço fixo do pacote_3h para o MÊS TODO; <3h = tarifa avulsa por ocorrência
+- Avulsa/grupo (`reservations`, **mínimo 5 PCs, até 10**, é reserva só pra grupo — `create_reservation` rejeita `p_station_count < 5`): antecedência mínima 4h, ter–dom 10h–22h, preço = tarifa vale/pico × duração (ou pacote_3h se 180min), × nº de PCs
+- Recorrente mensal (`recurring_reservations` → materializa em `reservations` no pagamento): sempre 1 PC (uso individual, sem mínimo de grupo), mesmo dia da semana + horário todo mês; 3h/sessão = preço fixo do pacote_3h para o MÊS TODO; <3h = tarifa avulsa por ocorrência
+- Cancelamento pelo próprio cliente usa RPC `cancel_my_reservation` (só reserva `confirmed` e futura) — nunca update direto na tabela. Staff usa `set_reservation_status` (máquina de estados, `is_staff_or_admin()`).
 - Trava de pagamento: status `awaiting_payment`, `payment_deadline_at` = criação + 1h; paga com créditos (`pay_reservation_with_credits`/`pay_recurring_with_credits`, instantâneo) ou no caixa (`confirm_reservation_payment`/`confirm_recurring_payment`, staff); pg_cron expira a cada 5min se disponível, senão lazy-expire nas RPCs de pagamento
-- PWA: `get_station_availability(day)` (vagas por hora) e `get_public_station_status()` (ocupação ao vivo sem PII) — ambas `anon`+`authenticated`
+- PWA: `get_station_availability(day)` (vagas por hora) e `get_public_station_status()` (ocupação ao vivo sem PII) — ambas `anon`+`authenticated`. Tela Disponibilidade tem modo "Padrão semanal" (7 chamadas de `get_station_availability` pra próxima ocorrência de cada dia) pra ajudar quem quer reserva mensal a escolher o dia/horário — deep-link `/reservas?mode=recorrente&dow=N` pré-seleciona o formulário recorrente.
 
 ## Sociedade
 - Sócio investidor arca com custos; operador (Iago) opera 100%. Lucro líquido 50/50 em horário normal.
