@@ -180,7 +180,7 @@ export function DisponibilidadePage() {
             <p className="text-xs text-[--muted]">Carregando…</p>
           ) : (
             <div className="flex flex-col gap-2">
-              {[0, 2, 3, 4, 5, 6, 1].filter((d) => weekSlots[d]).map((dow) => {
+              {[2, 3, 4, 5, 6, 0].filter((d) => weekSlots[d]).map((dow) => {
                 const daySlots = weekSlots[dow] ?? [];
                 const isExpanded = expandedDow === dow;
                 return (
