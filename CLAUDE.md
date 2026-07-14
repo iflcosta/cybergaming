@@ -63,3 +63,8 @@ Toda RPC que insere/atualiza `transactions.payment_method` a partir de um parâm
 
 ## Comandos
 - `bun install`; build por app: `cd apps/<app> && bun run build`; typecheck: `bunx tsc -p tsconfig.json --noEmit`
+- CI (`.github/workflows/ci.yml`) roda em PR e push pra main: `bun install` + typecheck + build pra `apps/landing`, `apps/cliente`, `apps/admin` (matrix). `apps/agent` (Electron) continua no workflow separado `build-agent.yml`.
+
+## Versionamento de schema/funções do banco
+- `packages/supabase/migrations/` é a segunda fonte de verdade do schema (a primeira é o histórico de migrations do próprio Supabase). Daqui pra frente, toda mudança de schema/função/trigger/RPC deve ser aplicada via `mcp__Supabase__apply_migration` (que já versiona automaticamente no lado do Supabase) **e também** espelhada como um novo arquivo em `packages/supabase/migrations/` — nunca só uma das duas.
+- `20260714000001_functions_snapshot.sql` é um snapshot de recuperação ponto-em-tempo (não incremental) de todas as ~50 funções/triggers/cron jobs que existiam no banco remoto em 2026-07-14, capturado porque até então só a DDL de tabelas (`20260713000001_init.sql`) estava versionada em git. Novas mudanças devem ser migrations incrementais normais, não edições nesse arquivo.
