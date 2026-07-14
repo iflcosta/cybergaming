@@ -34,6 +34,9 @@ export function HomePage() {
   const [history, setHistory] = useState<ActiveSession[]>([]);
   const [now, setNow] = useState(new Date());
   const [discountPct, setDiscountPct] = useState(0);
+  const [foundingProgress, setFoundingProgress] = useState<{
+    is_founding_member: boolean; lifetime_active_this_month?: boolean; played_min?: number; required_min?: number; remaining_min?: number;
+  } | null>(null);
 
   useEffect(() => {
     supabase
@@ -48,6 +51,9 @@ export function HomePage() {
     if (!user) return;
     supabase.rpc("get_customer_discount_pct", { p_customer_id: user.id }).then(({ data }) => {
       setDiscountPct(typeof data === "number" ? data : 0);
+    });
+    supabase.rpc("my_founding_progress").then(({ data }) => {
+      if (data) setFoundingProgress(data);
     });
   }, [user]);
 
@@ -196,6 +202,30 @@ export function HomePage() {
             <span className="text-xs font-bold" style={{ color: "var(--amber)" }}>+ Adicionar</span>
           </div>
         </Link>
+
+        {/* Founding lifetime discount progress */}
+        {foundingProgress?.is_founding_member && !foundingProgress.lifetime_active_this_month && foundingProgress.required_min !== undefined && (
+          <div className="rounded-xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-bold text-[--text]">Seu 10% vitalício está pausado</p>
+              <span className="text-[10px] font-bold" style={{ color: "var(--amber)" }}>
+                {Math.floor((foundingProgress.played_min ?? 0) / 60)}h{(foundingProgress.played_min ?? 0) % 60}min / {Math.floor(foundingProgress.required_min / 60)}h{foundingProgress.required_min % 60}min
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${Math.min(100, ((foundingProgress.played_min ?? 0) / foundingProgress.required_min) * 100)}%`,
+                  background: "var(--amber)",
+                }}
+              />
+            </div>
+            <p className="text-[10px] text-[--muted] mt-2">
+              Jogue mais {Math.floor((foundingProgress.remaining_min ?? 0) / 60)}h{(foundingProgress.remaining_min ?? 0) % 60}min esse mês pra reativar seu desconto vitalício.
+            </p>
+          </div>
+        )}
 
         {/* Reservations shortcut */}
         <Link

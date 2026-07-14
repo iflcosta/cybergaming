@@ -45,7 +45,7 @@ const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "
 const MIN_ADVANCE_MS = 4 * 3600_000;
 
 export function ReservasPage() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [mode, setMode] = useState<"avulsa" | "recorrente">("avulsa");
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [plans, setPlans] = useState<RecurringPlan[]>([]);
@@ -253,7 +253,7 @@ export function ReservasPage() {
             {savingRec ? "Calculando…" : "Criar plano do mês"}
           </button>
           <p className="text-[10px] text-[--muted]">
-            3h/sessão = preço do Pacote 3h ({profile?.is_founding_member ? "R$39,90" : "R$49,90"}) fixo pro mês todo · menos que isso, cobra por hora avulsa a cada sessão
+            3h/sessão = preço do Pacote 3h fixo pro mês todo (com seu desconto, se tiver) · menos que isso, cobra por hora avulsa a cada sessão
           </p>
         </form>
       )}
