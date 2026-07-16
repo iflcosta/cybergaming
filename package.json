@@ -11,6 +11,7 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "format": "turbo format",
+    "test": "turbo test",
     "dev:landing": "turbo dev --filter=@cybergaming/landing",
     "dev:cliente": "turbo dev --filter=@cybergaming/cliente",
     "dev:admin": "turbo dev --filter=@cybergaming/admin"
