@@ -26,6 +26,25 @@ interface RecurringCategory {
   sort_order: number;
 }
 
+interface StaffOption {
+  id: string;
+  full_name: string | null;
+  email: string;
+}
+
+type ShiftPeriod = "today" | "8h" | "custom";
+
+interface ShiftReport {
+  ok: boolean;
+  since: string;
+  until: string;
+  staff_id: string | null;
+  total_cents: number;
+  count: number;
+  by_payment_method: Record<string, number>;
+  by_staff: Record<string, number> | null;
+}
+
 function periodStart(p: Period): Date {
   const d = new Date();
   if (p === "today") { d.setHours(0, 0, 0, 0); return d; }
@@ -206,6 +225,9 @@ export function TransactionsPage() {
         </div>
       )}
 
+      {/* Shift/cash-close report */}
+      <ShiftReportCard />
+
       {/* Revenue stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Stat label="Receita" value={formatCents(revenue)} color="#60a5fa" />
@@ -381,6 +403,150 @@ export function TransactionsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Fechamento de turno / caixa ---------- */
+function ShiftReportCard() {
+  const [period, setPeriod] = useState<ShiftPeriod>("today");
+  const [staffId, setStaffId] = useState<string>("");
+  const [customSince, setCustomSince] = useState("");
+  const [customUntil, setCustomUntil] = useState("");
+  const [staffOptions, setStaffOptions] = useState<StaffOption[]>([]);
+  const [report, setReport] = useState<ShiftReport | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    supabase.from("profiles").select("id, full_name, email").in("role", ["staff", "admin"]).order("full_name")
+      .then(({ data }) => setStaffOptions((data as StaffOption[]) ?? []));
+  }, []);
+
+  function periodRange(): { since?: string; until?: string } {
+    if (period === "today") {
+      const d = new Date(); d.setHours(0, 0, 0, 0);
+      return { since: d.toISOString() };
+    }
+    if (period === "8h") {
+      return { since: new Date(Date.now() - 8 * 3600_000).toISOString() };
+    }
+    return {
+      since: customSince ? new Date(customSince).toISOString() : undefined,
+      until: customUntil ? new Date(customUntil).toISOString() : undefined,
+    };
+  }
+
+  async function runReport() {
+    setLoading(true);
+    const { since, until } = periodRange();
+    const { data, error } = await supabase.rpc("get_shift_report", {
+      p_staff_id: staffId || null,
+      p_since: since ?? null,
+      p_until: until ?? null,
+    });
+    setLoading(false);
+    if (error || !data?.ok) { toast.error("Erro ao gerar fechamento"); return; }
+    setReport(data as ShiftReport);
+  }
+
+  useEffect(() => { runReport(); /* eslint-disable-line react-hooks/exhaustive-deps */ }, []);
+
+  const PERIODS: { key: ShiftPeriod; label: string }[] = [
+    { key: "today", label: "Hoje" },
+    { key: "8h", label: "Últimas 8h" },
+    { key: "custom", label: "Customizado" },
+  ];
+
+  return (
+    <div className="rounded-lg p-4 mb-6" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+      <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Fechamento de turno / caixa</p>
+
+      <div className="flex flex-wrap items-end gap-2 mb-4">
+        <div className="flex gap-1 p-1 rounded-lg" style={{ background: "var(--bg)" }}>
+          {PERIODS.map((p) => (
+            <button key={p.key} onClick={() => setPeriod(p.key)}
+              className="px-3 py-1 rounded-md text-xs font-semibold transition-colors"
+              style={{ background: period === p.key ? "var(--amber)" : "transparent", color: period === p.key ? "#09090f" : "var(--muted)" }}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {period === "custom" && (
+          <>
+            <input type="datetime-local" value={customSince} onChange={(e) => setCustomSince(e.target.value)}
+              className="px-2 py-1.5 rounded-lg text-xs border text-white focus:outline-none"
+              style={{ background: "var(--bg)", borderColor: "var(--dim)" }} />
+            <span className="text-xs text-slate-500">até</span>
+            <input type="datetime-local" value={customUntil} onChange={(e) => setCustomUntil(e.target.value)}
+              className="px-2 py-1.5 rounded-lg text-xs border text-white focus:outline-none"
+              style={{ background: "var(--bg)", borderColor: "var(--dim)" }} />
+          </>
+        )}
+
+        <select value={staffId} onChange={(e) => setStaffId(e.target.value)}
+          className="px-2 py-1.5 rounded-lg text-xs border text-white focus:outline-none"
+          style={{ background: "var(--bg)", borderColor: "var(--dim)" }}>
+          <option value="">Todos os staff</option>
+          {staffOptions.map((s) => (
+            <option key={s.id} value={s.id}>{s.full_name ?? s.email}</option>
+          ))}
+        </select>
+
+        <button onClick={runReport} disabled={loading}
+          className="text-xs px-4 py-1.5 rounded-lg font-bold" style={{ background: "var(--amber)", color: "#09090f" }}>
+          Gerar
+        </button>
+      </div>
+
+      {report && (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-6">
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase">Total no período</p>
+              <p className="text-xl font-black" style={{ color: "var(--amber)" }}>{formatCents(report.total_cents)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase">Transações</p>
+              <p className="text-xl font-black text-white">{report.count}</p>
+            </div>
+            <div className="text-[10px] text-slate-600">
+              {new Date(report.since).toLocaleString("pt-BR")} até {new Date(report.until).toLocaleString("pt-BR")}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase mb-2">Por forma de pagamento</p>
+              <div className="flex flex-col gap-1">
+                {Object.entries(report.by_payment_method).length === 0 && (
+                  <p className="text-xs text-slate-600">Nenhuma transação</p>
+                )}
+                {Object.entries(report.by_payment_method).map(([method, cents]) => (
+                  <div key={method} className="flex items-center justify-between text-sm">
+                    <span className="text-slate-300">{PAYMENT_METHOD_LABELS[method as PaymentMethod] ?? method}</span>
+                    <span className="font-bold" style={{ color: "var(--amber)" }}>{formatCents(cents)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {report.by_staff && (
+              <div>
+                <p className="text-[10px] text-slate-500 uppercase mb-2">Por staff</p>
+                <div className="flex flex-col gap-1">
+                  {Object.entries(report.by_staff).map(([name, cents]) => (
+                    <div key={name} className="flex items-center justify-between text-sm">
+                      <span className="text-slate-300">{name}</span>
+                      <span className="font-bold text-white">{formatCents(cents)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

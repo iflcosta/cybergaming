@@ -36,7 +36,78 @@ export function SettingsPage() {
       <RecurringExpensesSection />
       <StationsSection />
       <AgentPinSection />
+      <CronHealthSection />
     </div>
+  );
+}
+
+/* ---------- Saúde dos pg_cron ---------- */
+interface CronJobHealth {
+  jobname: string;
+  exists: boolean;
+  last_run_at: string | null;
+  last_status: string | null;
+  expected_max_gap_minutes: number;
+  healthy: boolean;
+}
+
+const CRON_JOB_LABELS: Record<string, string> = {
+  "expire-stale-reservations": "Expirar reservas sem pagamento",
+  "expire-finished-fixed-sessions": "Encerrar sessões de pacote fixo vencidas",
+  "roll-founding-hours-debt": "Rolar dívida de horas founding (mensal)",
+  "notify-expiring-reservations": "Avisar reservas expirando",
+};
+
+function CronHealthSection() {
+  const [jobs, setJobs] = useState<CronJobHealth[] | null>(null);
+  const [checkedAt, setCheckedAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    const { data, error } = await supabase.rpc("get_cron_health");
+    setLoading(false);
+    if (error || !data?.ok) { toast.error("Erro ao checar cron jobs"); return; }
+    setJobs(data.jobs ?? []);
+    setCheckedAt(data.checked_at ?? null);
+  }
+  useEffect(() => { load(); }, []);
+
+  return (
+    <Section title="Saúde dos pg_cron" subtitle="Confere se as tarefas automáticas do banco continuam rodando — sem alerta automático, só checagem manual">
+      <div className="flex flex-col gap-1.5">
+        {jobs === null ? (
+          <p className="text-xs text-slate-600">Carregando…</p>
+        ) : (
+          jobs.map((j) => (
+            <div key={j.jobname} className="flex items-center justify-between px-4 py-2 rounded-lg text-sm" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+              <div>
+                <p className="text-white">{CRON_JOB_LABELS[j.jobname] ?? j.jobname}</p>
+                <p className="text-[10px] text-slate-500">
+                  {j.last_run_at ? `Última execução: ${new Date(j.last_run_at).toLocaleString("pt-BR")}` : "Nunca executou"}
+                  {j.last_status ? ` · ${j.last_status}` : ""}
+                </p>
+              </div>
+              <span
+                className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-3"
+                style={{
+                  background: j.healthy ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)",
+                  color: j.healthy ? "#34d399" : "#f87171",
+                }}
+              >
+                {j.healthy ? "OK" : "ATENÇÃO"}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+      <div className="flex items-center justify-between mt-2">
+        <p className="text-[10px] text-slate-600">{checkedAt ? `Checado em ${new Date(checkedAt).toLocaleTimeString("pt-BR")}` : ""}</p>
+        <button onClick={load} disabled={loading} className="text-xs px-3 py-1 rounded-lg font-bold" style={{ background: "var(--dim)", color: "var(--muted)" }}>
+          Atualizar
+        </button>
+      </div>
+    </Section>
   );
 }
 
