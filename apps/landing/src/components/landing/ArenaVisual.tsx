@@ -99,7 +99,7 @@ export function ArenaVisualSection() {
             { label: "21°C", sub: "Climatizado", color: "text-text-primary", border: "border-white/10", pos: "-right-24 bottom-16" },
           ].map((tag, i) => (
             <Reveal key={tag.label} delay={200 + i * 80} className={`absolute ${tag.pos} hidden lg:block`}>
-              <div className={`border ${tag.border} bg-bg-primary/90 backdrop-blur-sm px-3 py-2 rounded-lg text-center`}>
+              <div className={`border ${tag.border} bg-bg-primary/90 backdrop-blur-sm px-3 py-2 rounded-lg text-center w-28`}>
                 <div className={`${tag.color} font-black font-display text-xl`}>{tag.label}</div>
                 <div className="text-text-tertiary text-[9px] uppercase tracking-widest mt-0.5">{tag.sub}</div>
               </div>
