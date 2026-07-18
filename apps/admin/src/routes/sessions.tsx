@@ -5,7 +5,7 @@ import { formatCents, PACKAGES, type Session, type PcStation } from "@/lib/types
 import { PDV } from "@/components/PDV";
 import { EndSessionModal } from "@/components/EndSessionModal";
 
-type Tab = "active" | "today" | "all";
+type Tab = "active" | "today";
 
 export function SessionsPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -42,11 +42,7 @@ export function SessionsPage() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  const filtered = sessions.filter((s) => {
-    if (tab === "active") return s.status === "active";
-    if (tab === "today") return true;
-    return true;
-  });
+  const filtered = tab === "active" ? sessions.filter((s) => s.status === "active") : sessions;
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "active", label: `Ativas (${sessions.filter((s) => s.status === "active").length})` },
@@ -104,7 +100,17 @@ export function SessionsPage() {
                 <tr key={s.id} style={{ borderTop: "1px solid var(--dim)" }}>
                   <td className="px-4 py-3 font-bold text-white">{s.station?.label ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-300 text-xs">{s.customer?.full_name ?? s.customer?.email ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-400 text-xs">{s.package_type ? PACKAGES[s.package_type]?.label : "Sessão Aberta"}</td>
+                  <td className="px-4 py-3 text-slate-400 text-xs">
+                    <span>{s.package_type ? PACKAGES[s.package_type]?.label : "Sessão Aberta"}</span>
+                    {s.is_courtesy && (
+                      <span
+                        className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ background: "rgba(168,85,247,0.15)", color: "#a855f7" }}
+                      >
+                        CORTESIA
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-slate-400 text-xs">{new Date(s.started_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</td>
                   <td className="px-4 py-3 text-xs" style={{ color: "var(--amber)" }}>
                     {s.planned_end_at ? new Date(s.planned_end_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—"}

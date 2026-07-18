@@ -336,7 +336,7 @@ export function ReservasPage() {
           const meta = STATUS_LABELS[r.status];
           const dt = new Date(r.starts_at);
           const left = minutesLeft(r.payment_deadline_at);
-          const cancellable = r.status === "confirmed" && dt.getTime() > Date.now();
+          const cancellable = (r.status === "confirmed" && dt.getTime() > Date.now()) || r.status === "awaiting_payment";
           return (
             <div key={r.id} className="rounded-xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
               <div className="flex items-center justify-between">
@@ -353,8 +353,9 @@ export function ReservasPage() {
                 <div className="mt-3">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-[--muted]">{left}min para pagar</span>
+                    <button onClick={() => cancel(r)} className="ml-auto text-xs text-[--muted] underline">Cancelar</button>
                     <button onClick={() => payWithCredits(r.id, "reservation")}
-                      className="ml-auto text-xs px-3 py-1.5 rounded font-bold" style={{ background: "var(--amber)", color: "#09090f" }}>
+                      className="text-xs px-3 py-1.5 rounded font-bold" style={{ background: "var(--amber)", color: "#09090f" }}>
                       Pagar com créditos
                     </button>
                   </div>

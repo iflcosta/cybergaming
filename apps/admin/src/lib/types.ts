@@ -49,6 +49,7 @@ export interface Session {
   status: SessionStatus;
   price_cents: number;
   transaction_id: string | null;
+  is_courtesy: boolean;
   created_at: string;
   customer?: Profile;
   station?: PcStation;
