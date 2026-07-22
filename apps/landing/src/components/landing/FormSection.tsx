@@ -63,7 +63,7 @@ function RadioGroup<T extends string>({
   );
 }
 
-function StepLabel({ n, label, done }: { n: string; label: string; done?: boolean }) {
+function StepLabel({ n, label, optional, done }: { n: string; label: string; optional?: boolean; done?: boolean }) {
   return (
     <div className="flex items-center gap-3">
       <div
@@ -77,6 +77,11 @@ function StepLabel({ n, label, done }: { n: string; label: string; done?: boolea
       </div>
       <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-secondary">
         {label}
+        {optional && (
+          <span className="ml-1.5 normal-case tracking-normal text-accent-secondary">
+            (pula se quiser)
+          </span>
+        )}
       </span>
       <div className="flex-1 h-px bg-white/5" />
     </div>
@@ -198,7 +203,7 @@ export function FormSection() {
   const step1Done = status === "success";
 
   return (
-    <section id="form" className="px-6 py-16 md:py-32">
+    <section id="form" className="scroll-mt-24 px-6 py-16 md:py-32">
       <div className="mx-auto max-w-2xl">
         <Reveal className="text-center">
           <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.25em] text-accent-secondary">
@@ -288,7 +293,7 @@ export function FormSection() {
               </div>
 
               <div className="space-y-5 border-t border-white/5 pt-6">
-                <StepLabel n="02" label="Seu perfil gamer (opcional)" />
+                <StepLabel n="02" label="Seu perfil gamer" optional />
 
                 <div className="space-y-2">
                   <label
