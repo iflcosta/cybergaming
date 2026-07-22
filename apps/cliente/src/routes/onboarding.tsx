@@ -68,10 +68,15 @@ export function OnboardingPage() {
         {/* Founding Member badge */}
         {profile?.is_founding_member && (
           <div
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold"
+            className="flex flex-col gap-1 px-3 py-2 rounded-lg text-xs font-bold"
             style={{ background: "rgba(251,191,36,0.12)", color: "var(--amber)", border: "1px solid rgba(251,191,36,0.3)" }}
           >
-            ★ Founding Member ativo — vouchers no seu email
+            <span>★ Founding Member ativo — vouchers no seu email</span>
+            {profile.founding_tier === "welcome" && (
+              <span className="font-normal text-[--muted]">
+                As vagas de membro vitalício founding foram atingidas — você ainda ganha 25% no seu primeiro pagamento!
+              </span>
+            )}
           </div>
         )}
 

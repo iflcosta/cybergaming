@@ -17,6 +17,7 @@ export interface Profile {
   birth_date: string | null;
   role: UserRole;
   is_founding_member: boolean;
+  founding_tier: "full" | "welcome" | null;
   credits_balance: number;
   created_at: string;
   updated_at: string;

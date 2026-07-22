@@ -22,6 +22,7 @@ export interface Database {
           birth_date: string | null;
           role: "customer" | "staff" | "admin";
           is_founding_member: boolean;
+          founding_tier: "full" | "welcome" | null;
           founding_discount_used: boolean;
           credits_balance: number;
           created_at: string;

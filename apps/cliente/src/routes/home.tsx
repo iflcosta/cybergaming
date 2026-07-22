@@ -35,7 +35,8 @@ export function HomePage() {
   const [now, setNow] = useState(new Date());
   const [discountPct, setDiscountPct] = useState(0);
   const [foundingProgress, setFoundingProgress] = useState<{
-    is_founding_member: boolean; lifetime_active_this_month?: boolean; played_min?: number; required_min?: number; remaining_min?: number;
+    is_founding_member: boolean; founding_tier?: "full" | "welcome"; lifetime_slots_full?: boolean;
+    lifetime_active_this_month?: boolean; played_min?: number; required_min?: number; remaining_min?: number;
   } | null>(null);
 
   useEffect(() => {
@@ -203,8 +204,18 @@ export function HomePage() {
           </div>
         </Link>
 
+        {/* Founding welcome tier — lifetime slots full, 25% voucher only */}
+        {foundingProgress?.founding_tier === "welcome" && (
+          <div className="rounded-xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
+            <p className="text-xs font-bold text-[--text] mb-1">★ Founding Member</p>
+            <p className="text-[10px] text-[--muted]">
+              As vagas de membro vitalício founding foram atingidas — você ainda ganha 25% no seu primeiro pagamento!
+            </p>
+          </div>
+        )}
+
         {/* Founding lifetime discount progress */}
-        {foundingProgress?.is_founding_member && !foundingProgress.lifetime_active_this_month && foundingProgress.required_min !== undefined && (
+        {foundingProgress?.is_founding_member && foundingProgress.founding_tier === "full" && !foundingProgress.lifetime_active_this_month && foundingProgress.required_min !== undefined && (
           <div className="rounded-xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-bold text-[--text]">Seu 10% vitalício está pausado</p>
