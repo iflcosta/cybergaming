@@ -4,7 +4,7 @@ import { Reveal } from "./Reveal";
 export function StatsBar() {
   const stats = [
     { icon: Monitor, value: "10", label: "PCs premium" },
-    { icon: Users, value: "Limitadas", label: "Vagas founding member" },
+    { icon: Users, value: "200", label: "Vagas founding member" },
     { icon: Zap, value: "<10ms", label: "Latência" },
     { icon: Clock, value: "Set/26", label: "Abertura" },
   ];

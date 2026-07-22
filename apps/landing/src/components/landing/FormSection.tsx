@@ -8,6 +8,13 @@ import { Reveal } from "./Reveal";
 
 const FOUNDING_CAP = 200;
 
+function trackMetaLead() {
+  if (typeof window !== "undefined") {
+    const fbq = (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq;
+    if (typeof fbq === "function") fbq("track", "Lead");
+  }
+}
+
 function RadioGroup<T extends string>({
   label,
   name,
@@ -140,9 +147,6 @@ export function FormSection() {
     if (nome.length < 2) errs.nome = "Digita seu nome completo";
     if (whatsapp.replace(/\D/g, "").length < 10) errs.whatsapp = "WhatsApp inválido";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "Email inválido";
-    if (!jogo) errs.jogo = "Seleciona seu jogo principal";
-    if (!estilo) errs.estilo = "Seleciona seu estilo de jogo";
-    if (!interesse) errs.interesse = "Seleciona seu interesse";
     if (!checked) errs.lgpd = "Precisa aceitar pra continuar";
     return errs;
   }
@@ -170,16 +174,19 @@ export function FormSection() {
         nome,
         whatsapp,
         email,
-        jogo_principal: jogo === "Outro" ? jogoOutro || "Outro" : jogo,
-        estilo_jogo: estilo,
-        interesse_campeonatos: interesse,
+        jogo_principal: jogo ? (jogo === "Outro" ? jogoOutro || "Outro" : jogo) : null,
+        estilo_jogo: estilo || null,
+        interesse_campeonatos: interesse || null,
         lgpd_aceito: checked,
         ...utm,
       });
+      trackMetaLead();
       setStatus("success");
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code;
       if (code === "23505") {
+        // Lead duplicado ainda é lead válido pro Meta
+        trackMetaLead();
         setStatus("success");
       } else {
         console.error("insertLead failed:", err);
@@ -195,16 +202,17 @@ export function FormSection() {
       <div className="mx-auto max-w-2xl">
         <Reveal className="text-center">
           <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.25em] text-accent-secondary">
-            — Lista exclusiva
+            — Founding Member Club — só 200 vagas
           </div>
           <h2 className="font-display text-4xl font-black uppercase tracking-tighter md:text-5xl">
-            Entre antes{" "}
+            Garanta seu voucher{" "}
             <span className="bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">
-              de todo mundo
+              de 25% OFF
             </span>
           </h2>
           <p className="mt-4 text-text-secondary">
-            100% gratuito. Sem pagamento. Sem compromisso. Só benefícios.
+            25% no primeiro pacote + 10% vitalício pra quem joga 4h+/mês. Cadastro grátis, sem
+            compromisso.
           </p>
         </Reveal>
 
@@ -280,7 +288,7 @@ export function FormSection() {
               </div>
 
               <div className="space-y-5 border-t border-white/5 pt-6">
-                <StepLabel n="02" label="Seu perfil gamer" />
+                <StepLabel n="02" label="Seu perfil gamer (opcional)" />
 
                 <div className="space-y-2">
                   <label

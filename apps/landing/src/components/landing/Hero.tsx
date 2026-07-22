@@ -112,7 +112,7 @@ export function Hero() {
           </a>
 
           <div className="flex flex-col items-center gap-1 md:items-start">
-            <span className="font-display text-lg font-black text-accent-primary">Vagas limitadas</span>
+            <span className="font-display text-lg font-black text-accent-primary">Só 200 vagas founding</span>
             <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
               seu voucher de 25% expira 60 dias após a abertura
             </span>

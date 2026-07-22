@@ -17,7 +17,7 @@ export function VoucherSection() {
                   Vagas
                 </div>
                 <div className="mt-2 font-display text-3xl font-black text-accent-primary leading-none">
-                  Limitadas
+                  Só 200
                 </div>
                 <div className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
                   voucher expira 60 dias após a abertura

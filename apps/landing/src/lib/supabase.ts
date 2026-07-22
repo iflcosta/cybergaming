@@ -18,9 +18,9 @@ export async function insertLead(payload: {
   nome: string;
   whatsapp: string;
   email: string;
-  jogo_principal: string;
-  estilo_jogo: string;
-  interesse_campeonatos: string;
+  jogo_principal: string | null;
+  estilo_jogo: string | null;
+  interesse_campeonatos: string | null;
   lgpd_aceito: boolean;
   utm_source?: string;
   utm_medium?: string;
